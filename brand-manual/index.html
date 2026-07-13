@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Marca — Seu Legado Seguro</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #fff; -webkit-font-smoothing: antialiased; }
+
+/* ─── SLIDE BASE ─── */
+.slide {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+
+/* ─── NAV DOTS ─── */
+.nav-dots {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(0,58,112,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-dot.active { background: #003A70; transform: scale(1.5); }
+
+/* ─── COMUNS ─── */
+.slide-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 4px;
+  text-transform: uppercase; color: #003A70; opacity: 0.55;
+  margin-bottom: 8px; display: block;
+}
+.slide-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 300; color: #0A0F1C; line-height: 1.05; margin-bottom: 24px;
+}
+.section-rule { width: 40px; height: 2px; background: #003A70; margin-bottom: 32px; }
+.inner { width: 100%; max-width: 1100px; padding: 80px; }
+
+/* ═══════════════════════════════════════════
+   01 — CAPA (única slide navy — identidade)
+═══════════════════════════════════════════ */
+.capa {
+  background: #003A70;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.capa-logo {
+  width: 300px; height: auto; display: block;
+  margin: 0 auto 56px;
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.35));
+}
+.capa-divider { width: 48px; height: 1px; background: rgba(255,255,255,0.25); margin: 0 auto 28px; }
+.capa-eyebrow {
+  font-size: 10px; font-weight: 500; letter-spacing: 5px;
+  text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 14px;
+}
+.capa-titulo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(44px, 6vw, 72px);
+  font-weight: 300; color: #fff; line-height: 1.0;
+}
+.capa-titulo em { font-style: italic; }
+.capa-rodape {
+  position: absolute; bottom: 36px;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ═══════════════════════════════════════════
+   02 — CONCEITO
+═══════════════════════════════════════════ */
+.conceito-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  width: 100%;
+  max-width: 1100px;
+  padding: 80px;
+  align-items: center;
+}
+.conceito-left { padding-right: 80px; border-right: 1px solid rgba(0,0,0,0.08); }
+.conceito-right { padding-left: 80px; display: flex; flex-direction: column; gap: 36px; }
+.construction-wrap {
+  width: 280px; height: 280px;
+  border: 1px solid rgba(0,58,112,0.1);
+  background-image:
+    linear-gradient(rgba(0,58,112,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,58,112,0.07) 1px, transparent 1px);
+  background-size: 35px 35px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; border-radius: 4px; margin-top: 36px;
+}
+.construction-wrap img { width: 55%; height: auto; opacity: 0.45; }
+.c-circle {
+  position: absolute;
+  border: 1.5px dashed rgba(220,38,38,0.45);
+  border-radius: 50%;
+}
+.conceito-item { display: flex; gap: 20px; }
+.cn { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300; color: rgba(0,58,112,0.12); line-height: 1; flex-shrink: 0; width: 44px; }
+.ct h4 { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #0A0F1C; margin-bottom: 5px; }
+.ct p { font-size: 13px; color: #6B7280; line-height: 1.65; }
+
+/* ═══════════════════════════════════════════
+   03 — LOGOTIPO
+═══════════════════════════════════════════ */
+.logo-inner { background: #fff; }
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px; margin-bottom: 2px;
+}
+.lv { display: flex; flex-direction: column; }
+.lv-preview {
+  height: 200px;
+  background-size: 70%; background-position: center; background-repeat: no-repeat;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.lv-label {
+  padding: 14px 16px;
+  background: #F9FAFB;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-top: none;
+}
+.lv-label strong { display: block; font-size: 12px; font-weight: 600; color: #0A0F1C; margin-bottom: 2px; }
+.lv-label span { font-size: 11px; color: #9CA3AF; }
+
+.logo-horiz { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 40px; }
+.lv-sm {
+  height: 130px;
+  background-size: 70%; background-position: center; background-repeat: no-repeat;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.uso-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.uso-head {
+  font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid;
+}
+.uso-ok .uso-head { color: #16A34A; border-color: #16A34A; }
+.uso-no .uso-head { color: #DC2626; border-color: #DC2626; }
+.uso-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.uso-list li { font-size: 13px; color: #6B7280; padding-left: 20px; position: relative; line-height: 1.5; }
+.uso-list li::before { position: absolute; left: 0; top: 0; font-size: 11px; font-weight: 700; }
+.uso-ok .uso-list li::before { content: "✓"; color: #16A34A; }
+.uso-no .uso-list li::before { content: "✗"; color: #DC2626; }
+
+/* ═══════════════════════════════════════════
+   04 — ÍCONE
+═══════════════════════════════════════════ */
+.icon-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 40px;
+}
+.ic-preview {
+  height: 180px;
+  background-size: 38%; background-position: center; background-repeat: no-repeat;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.ic-meta {
+  padding: 14px 16px; background: #F9FAFB;
+  border: 1px solid rgba(0,0,0,0.06); border-top: none;
+}
+.ic-meta strong { display: block; font-size: 12px; font-weight: 600; color: #0A0F1C; margin-bottom: 2px; }
+.ic-meta span { font-size: 11px; color: #9CA3AF; }
+
+/* ═══════════════════════════════════════════
+   05 — CORES
+═══════════════════════════════════════════ */
+.cores-bg { background: #F7F8FA; }
+.polaroid-row {
+  display: flex; gap: 28px; align-items: center;
+  justify-content: center; flex-wrap: wrap; margin-bottom: 48px;
+}
+.polaroid {
+  background: #fff;
+  padding: 14px 14px 44px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  width: 190px; flex-shrink: 0;
+  transform-origin: center bottom;
+}
+.polaroid:nth-child(1) { transform: rotate(-2deg); }
+.polaroid:nth-child(2) { transform: rotate(1deg) translateY(-6px); }
+.polaroid:nth-child(3) { transform: rotate(-1.5deg) translateY(4px); }
+.polaroid:nth-child(4) { transform: rotate(2.5deg) translateY(-4px); }
+.pol-swatch { width: 100%; height: 130px; display: block; }
+.pol-hex { text-align: right; font-size: 11px; font-weight: 600; color: #6B7280; font-family: 'SF Mono', 'Fira Code', monospace; margin-top: 10px; display: block; }
+.pol-name { font-size: 13px; font-weight: 600; color: #111827; margin-top: 3px; display: block; }
+.pol-role { font-size: 10px; color: #9CA3AF; display: block; margin-top: 2px; }
+
+.combos-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+}
+.combo {
+  height: 64px; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.combo-label {
+  text-align: center; font-size: 10px; color: #9CA3AF;
+  padding: 10px 8px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-top: none;
+}
+
+/* ═══════════════════════════════════════════
+   06 — TIPOGRAFIA
+═══════════════════════════════════════════ */
+.typo-bg { background: #fff; }
+.typo-hero {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(72px, 11vw, 140px);
+  font-weight: 300; color: rgba(0,58,112,0.06);
+  line-height: 0.85; letter-spacing: -3px;
+  display: block; margin-bottom: -4px;
+}
+.typo-cols {
+  display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0; margin-top: 40px;
+}
+.typo-div { background: rgba(0,0,0,0.07); }
+.typo-col { padding: 0 48px; }
+.typo-col:first-child { padding-left: 0; }
+.typo-col:last-child { padding-right: 0; }
+.typo-col-head {
+  font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: #003A70; margin-bottom: 28px; padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.ts { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.ts:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.ts-meta { font-size: 10px; color: #9CA3AF; margin-top: 4px; display: block; }
+.t1 { font-family: 'Cormorant Garamond', serif; font-size: 52px; font-weight: 300; color: #003A70; line-height: 1; }
+.t2 { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: #0A0F1C; line-height: 1.1; }
+.t3 { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: #6B7280; }
+.t4 { font-size: 19px; font-weight: 700; color: #003A70; }
+.t5 { font-size: 15px; font-weight: 600; color: #0A0F1C; }
+.t6 { font-size: 14px; font-weight: 400; color: #6B7280; line-height: 1.7; }
+.t7 { font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #003A70; }
+
+/* ═══════════════════════════════════════════
+   07 — TOM DE VOZ
+═══════════════════════════════════════════ */
+.tom-bg { background: #F7F8FA; }
+.pillars {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin-bottom: 40px;
+}
+.pillar {
+  background: #fff; padding: 32px 20px;
+  border: 1px solid rgba(0,0,0,0.07);
+}
+.pillar .p-num {
+  font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 300;
+  color: rgba(0,58,112,0.1); line-height: 1; display: block; margin-bottom: 14px;
+}
+.pillar .p-word { font-size: 14px; font-weight: 700; color: #003A70; display: block; margin-bottom: 8px; }
+.pillar .p-desc { font-size: 12px; color: #6B7280; line-height: 1.6; }
+.voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.voice-box { background: #fff; padding: 32px; border: 1px solid rgba(0,0,0,0.07); }
+.v-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 16px; display: block; padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.v-ok .v-tag { color: #16A34A; }
+.v-no .v-tag { color: #DC2626; }
+.v-quote {
+  font-family: 'Cormorant Garamond', serif; font-size: 19px; font-style: italic;
+  color: #0A0F1C; line-height: 1.65; margin-bottom: 12px;
+}
+.v-note { font-size: 12px; color: #9CA3AF; }
+
+/* ═══════════════════════════════════════════
+   08 — APLICAÇÕES
+═══════════════════════════════════════════ */
+.app-bg { background: #fff; }
+.app-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+}
+.app-cell { border: 1px solid rgba(0,0,0,0.07); display: flex; flex-direction: column; }
+.app-preview {
+  height: 240px; display: flex;
+  align-items: center; justify-content: center; padding: 40px;
+}
+.app-meta { padding: 16px 20px; border-top: 1px solid rgba(0,0,0,0.07); }
+.app-meta strong { display: block; font-size: 12px; font-weight: 600; color: #0A0F1C; margin-bottom: 3px; }
+.app-meta span { font-size: 11px; color: #9CA3AF; }
+
+/* Business card */
+.card-stack { position: relative; width: 260px; height: 160px; }
+.bcard {
+  position: absolute; width: 260px; height: 148px;
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.16);
+}
+.bcard.front {
+  background: #003A70; top: 0; left: 0; z-index: 3;
+  transform: rotate(-3deg) translateY(-8px);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 20px 22px;
+}
+.bcard.back {
+  background: #fff; top: 12px; left: 12px; z-index: 2;
+  transform: rotate(2deg) translateY(4px);
+  border: 1px solid rgba(0,0,0,0.1);
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: flex-start; padding: 20px 22px;
+}
+.bcard.third {
+  background: #F5F3F0; top: 22px; left: 22px; z-index: 1;
+  transform: rotate(-1deg) translateY(10px);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.bc-logo { height: 24px; width: auto; display: block; image-rendering: -webkit-optimize-contrast; }
+.bc-info { text-align: right; }
+.bc-name { font-size: 9px; font-weight: 700; color: #fff; display: block; }
+.bc-role { font-size: 7px; color: rgba(255,255,255,0.6); display: block; margin-top: 2px; }
+.bc-phone { font-size: 7px; color: rgba(255,255,255,0.85); display: block; margin-top: 5px; }
+.bc-back-logo { height: 18px; width: auto; margin-bottom: 10px; display: block; image-rendering: -webkit-optimize-contrast; }
+.bc-back-name { font-size: 9px; font-weight: 700; color: #003A70; display: block; }
+.bc-back-role { font-size: 7px; color: #6B7280; display: block; }
+
+/* Header mockup */
+.hdr-mock {
+  width: 100%; max-width: 340px;
+  background: #003A70;
+  border-radius: 8px; height: 48px;
+  display: flex; align-items: center; padding: 0 18px; gap: 12px;
+  box-shadow: 0 8px 28px rgba(0,58,112,0.25);
+}
+.hdr-logo { height: 20px; width: auto; }
+.hdr-nav { display: flex; gap: 14px; margin-left: auto; }
+.hdr-nav span { font-size: 9px; color: rgba(255,255,255,0.65); }
+.hdr-cta {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 4px; padding: 5px 10px;
+  font-size: 8px; font-weight: 700; color: #fff;
+}
+
+/* Avatar cards */
+.av-row { display: flex; gap: 24px; align-items: center; }
+.av-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.av-lbl { font-size: 9px; color: #9CA3AF; }
+.av-circle { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 16px rgba(0,0,0,0.15); background-size: 62%; background-position: center; background-repeat: no-repeat; }
+.av-sq { width: 80px; height: 80px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); background-size: 62%; background-position: center; background-repeat: no-repeat; }
+.av-circle img, .av-sq img { display: none; }
+
+/* WhatsApp */
+.wa { background: #E5DDD5; border-radius: 10px; padding: 16px; width: 220px; }
+.wa-bubble { background: #DCF8C6; border-radius: 8px 8px 0 8px; padding: 10px 14px; margin-bottom: 6px; }
+.wa-sender { font-size: 10px; font-weight: 700; color: #075E54; display: block; margin-bottom: 4px; }
+.wa-text { font-size: 11px; line-height: 1.5; color: #111827; }
+.wa-time { font-size: 9px; color: #9CA3AF; text-align: right; margin-top: 4px; display: block; }
+
+/* ═══════════════════════════════════════════
+   09 — PADRÃO
+═══════════════════════════════════════════ */
+.padrao-slide { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; scroll-snap-align: start; overflow: hidden; width: 100%; }
+.padrao-left {
+  background: #003A70; display: flex; align-items: center;
+  justify-content: center; padding: 80px; position: relative; overflow: hidden;
+}
+.padrao-repeat {
+  position: absolute; inset: 0;
+  background-image: url('assets/color1/icon/white_icon_color1_background.png');
+  background-size: 80px 80px;
+  background-repeat: repeat;
+  opacity: 0.05;
+}
+.padrao-left-content { position: relative; z-index: 2; text-align: center; }
+.padrao-left-content img { width: 200px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 16px 40px rgba(0,0,0,0.3)); }
+.padrao-left-content p { margin-top: 24px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+
+.padrao-right {
+  background: #F7F8FA; display: flex; align-items: center;
+  justify-content: center; padding: 80px; position: relative; overflow: hidden;
+}
+.padrao-repeat-light {
+  position: absolute; inset: 0;
+  background-image: url('assets/color1/icon/color1_icon_light_background.png');
+  background-size: 80px 80px;
+  background-repeat: repeat;
+  opacity: 0.06;
+}
+.padrao-right-content { position: relative; z-index: 2; text-align: center; }
+.padrao-card {
+  background: #fff; border-radius: 14px; padding: 40px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.1); text-align: center; width: 240px;
+}
+.padrao-card img { width: 90px; height: auto; display: block; margin: 0 auto 20px; }
+.padrao-card-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: #003A70; line-height: 1.2; margin-bottom: 6px; }
+.padrao-card-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #9CA3AF; }
+.padrao-right-content p { margin-top: 20px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #9CA3AF; }
+
+/* ═══════════════════════════════════════════
+   FINAL
+═══════════════════════════════════════════ */
+.final { background: #fff; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0; }
+.final img { width: 300px; height: auto; display: block; margin-bottom: 56px; }
+.final-rule { width: 48px; height: 1px; background: rgba(0,58,112,0.15); margin-bottom: 24px; }
+.final-text { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #9CA3AF; }
+.final-foot { position: absolute; bottom: 36px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(0,0,0,0.18); }
+</style>
+</head>
+<body>
+
+<nav class="nav-dots" aria-hidden="true">
+  <div class="nav-dot active"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+  <div class="nav-dot"></div>
+</nav>
+
+<!-- ══════ 01 — CAPA ══════ -->
+<section class="slide capa" id="s1">
+  <img class="capa-logo" src="assets/black/full/white_logo_transparent_background.png" alt="Seu Legado Seguro">
+  <div class="capa-divider"></div>
+  <p class="capa-eyebrow">Identidade Visual</p>
+  <h1 class="capa-titulo">Manual <em>de Marca</em></h1>
+  <p class="capa-rodape">Seu Legado Seguro &nbsp;·&nbsp; Corretora de Seguros &nbsp;·&nbsp; Salvador, BA &nbsp;·&nbsp; 2025</p>
+</section>
+
+<!-- ══════ 02 — CONCEITO ══════ -->
+<section class="slide" id="s2" style="background:#fff;">
+  <div class="conceito-inner">
+    <div class="conceito-left">
+      <span class="slide-label">02 — Conceito</span>
+      <h2 class="slide-title">A construção<br>do símbolo.</h2>
+      <p style="font-size:15px;color:#6B7280;line-height:1.8;margin-bottom:0;">O monograma "S" foi construído sobre uma grade modular, combinando traços serifados de tradição com a solidez geométrica do quadrado. O ângulo do serifado evoca nobreza. A forma quadrada, estabilidade e proteção.</p>
+      <div class="construction-wrap">
+        <img src="assets/base/full/base_logo_transparent_background.png" alt="Logo construção">
+        <div class="c-circle" style="width:52px;height:52px;top:48px;left:38px;"></div>
+        <div class="c-circle" style="width:52px;height:52px;top:88px;left:75px;"></div>
+        <div class="c-circle" style="width:52px;height:52px;bottom:38px;left:50px;"></div>
+        <div class="c-circle" style="width:52px;height:52px;top:88px;right:38px;"></div>
+      </div>
+    </div>
+    <div class="conceito-right">
+      <div class="conceito-item">
+        <span class="cn">01</span>
+        <div class="ct"><h4>Grade modular</h4><p>Construído sobre um grid de 10×10 unidades, garantindo proporcionalidade perfeita em qualquer escala de aplicação.</p></div>
+      </div>
+      <div class="conceito-item">
+        <span class="cn">02</span>
+        <div class="ct"><h4>Monograma "S"</h4><p>O "S" serifado dentro do quadrado representa o nome da marca, solidez, proteção e contenção — o legado guardado.</p></div>
+      </div>
+      <div class="conceito-item">
+        <span class="cn">03</span>
+        <div class="ct"><h4>Logotipo composto</h4><p>A tipografia geométrica "SEU LEGADO SEGURO" reforça modernidade. O subtexto "Corretora de Seguros" ancora a categoria.</p></div>
+      </div>
+      <div class="conceito-item">
+        <span class="cn">04</span>
+        <div class="ct"><h4>Azul navy</h4><p>Transmite credibilidade, solidez financeira e tradição — valores centrais do mercado de seguros e do público de alta renda.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 03 — LOGOTIPO ══════ -->
+<section class="slide app-bg" id="s3">
+  <div class="inner logo-inner">
+    <span class="slide-label">03 — Logotipo</span>
+    <h2 class="slide-title">Variantes<br>do logo.</h2>
+    <div class="logo-grid">
+      <div class="lv">
+        <div class="lv-preview" style="background-color:#003A70;background-image:url('assets/color1/full/white_logo_color1_background.png');"></div>
+        <div class="lv-label"><strong>Versão escura</strong><span>Fundos navy e fotos escuras</span></div>
+      </div>
+      <div class="lv">
+        <div class="lv-preview" style="background-color:#FFFFFF;background-image:url('assets/base/full/base_logo_white_background.png');"></div>
+        <div class="lv-label"><strong>Versão clara</strong><span>Fundos brancos e papelaria</span></div>
+      </div>
+      <div class="lv">
+        <div class="lv-preview" style="background-color:#D9E1EA;background-image:url('assets/color1/full/color1_logo_light_background.png');"></div>
+        <div class="lv-label"><strong>Versão azul aço</strong><span>Fundos frios e apresentações</span></div>
+      </div>
+      <div class="lv">
+        <div class="lv-preview" style="background-color:#000000;background-image:url('assets/black/full/white_logo_black_background.png');"></div>
+        <div class="lv-label"><strong>Versão preta</strong><span>Monocromático · Gravação · Laser</span></div>
+      </div>
+    </div>
+    <div class="logo-horiz">
+      <div class="lv">
+        <div class="lv-sm" style="background-color:#FFFFFF;background-image:url('assets/customcolor/full/customcolor_logo_customcolor_background.png');"></div>
+        <div class="lv-label"><strong>Horizontal — claro</strong><span>Header, A4, rodapé de e-mail</span></div>
+      </div>
+      <div class="lv">
+        <div class="lv-sm" style="background-color:#003A70;background-image:url('assets/color1/full/white_logo_color1_background.png');"></div>
+        <div class="lv-label"><strong>Horizontal — escuro</strong><span>Headers navy, rodapés escuros</span></div>
+      </div>
+    </div>
+    <div class="uso-row">
+      <div class="uso-ok">
+        <div class="uso-head">Uso correto</div>
+        <ul class="uso-list">
+          <li>Usar sempre arquivos com fundo transparente ao sobrepor em imagens</li>
+          <li>Versão branca em fundos escuros; colorida em fundos claros</li>
+          <li>Zona de proteção mínima igual à altura do "S"</li>
+          <li>Escalar sempre proporcionalmente, sem deformar</li>
+        </ul>
+      </div>
+      <div class="uso-no">
+        <div class="uso-head">Uso incorreto</div>
+        <ul class="uso-list">
+          <li>Distorcer, esticar ou comprimir o logo horizontalmente</li>
+          <li>Alterar as cores ou aplicar efeitos como sombra e brilho</li>
+          <li>Usar sobre fundos que dificultem a leitura do símbolo</li>
+          <li>Recriar o logo com outras fontes ou elementos gráficos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 04 — ÍCONE ══════ -->
+<section class="slide" id="s4" style="background:#F7F8FA;">
+  <div class="inner">
+    <span class="slide-label">04 — Ícone isolado</span>
+    <h2 class="slide-title">O símbolo<br>em destaque.</h2>
+    <div class="icon-row">
+      <div>
+        <div class="ic-preview" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+        <div class="ic-meta"><strong>Fundo navy</strong><span>WhatsApp · Instagram · Favicon</span></div>
+      </div>
+      <div>
+        <div class="ic-preview" style="background-color:#FFFFFF;background-image:url('assets/base/icon/base_icon_white_background.png');"></div>
+        <div class="ic-meta"><strong>Fundo branco</strong><span>Digital · Papelaria · App</span></div>
+      </div>
+      <div>
+        <div class="ic-preview" style="background-color:#000000;background-image:url('assets/black/icon/white_icon_black_background.png');"></div>
+        <div class="ic-meta"><strong>Monocromático</strong><span>Bordado · Gravação · Laser</span></div>
+      </div>
+      <div>
+        <div class="ic-preview" style="background-color:#D9E1EA;background-image:url('assets/color1/icon/color1_icon_light_background.png');"></div>
+        <div class="ic-meta"><strong>Azul aço</strong><span>Fundos frios · Slides · PDFs</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 05 — CORES ══════ -->
+<section class="slide cores-bg" id="s5">
+  <div class="inner">
+    <span class="slide-label">05 — Paleta de cores</span>
+    <h2 class="slide-title">Azul como <em style="font-family:'Cormorant Garamond',serif;font-style:italic;">fundação.</em></h2>
+    <div class="polaroid-row">
+      <div class="polaroid">
+        <div class="pol-swatch" style="background:#003A70;"></div>
+        <span class="pol-hex">#003A70</span>
+        <span class="pol-name">Navy Principal</span>
+        <span class="pol-role">Cor primária da marca</span>
+      </div>
+      <div class="polaroid">
+        <div class="pol-swatch" style="background:#122A56;"></div>
+        <span class="pol-hex">#122A56</span>
+        <span class="pol-name">Navy Escuro</span>
+        <span class="pol-role">Fundos · Gradientes</span>
+      </div>
+      <div class="polaroid">
+        <div class="pol-swatch" style="background:#2A5299;"></div>
+        <span class="pol-hex">#2A5299</span>
+        <span class="pol-name">Azul Médio</span>
+        <span class="pol-role">Links · Destaques</span>
+      </div>
+      <div class="polaroid">
+        <div class="pol-swatch" style="background:#D9E1EA; border:1px solid #e5e7eb;"></div>
+        <span class="pol-hex">#D9E1EA</span>
+        <span class="pol-name">Azul Aço</span>
+        <span class="pol-role">Fundos suaves · Badges</span>
+      </div>
+    </div>
+    <div class="combos-row">
+      <div>
+        <div class="combo" style="background:#003A70;color:#fff;">Branco sobre Navy</div>
+        <div class="combo-label">Combinação principal</div>
+      </div>
+      <div>
+        <div class="combo" style="background:#fff;color:#003A70;border:1px solid rgba(0,0,0,0.08);">Navy sobre Branco</div>
+        <div class="combo-label">Materiais impressos</div>
+      </div>
+      <div>
+        <div class="combo" style="background:#D9E1EA;color:#003A70;">Navy sobre Aço</div>
+        <div class="combo-label">Apresentações · Slides</div>
+      </div>
+      <div>
+        <div class="combo" style="background:#122A56;color:#D9E1EA;">Aço sobre Escuro</div>
+        <div class="combo-label">Elementos premium</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 06 — TIPOGRAFIA ══════ -->
+<section class="slide typo-bg" id="s6">
+  <div class="inner">
+    <span class="slide-label">06 — Tipografia</span>
+    <span class="typo-hero" aria-hidden="true">Aa</span>
+    <div class="typo-cols">
+      <div class="typo-col">
+        <div class="typo-col-head">Cormorant Garamond · Títulos</div>
+        <div class="ts"><p class="t1">Legado</p><span class="ts-meta">Light 300 · 52px · Títulos principais</span></div>
+        <div class="ts"><p class="t2">Proteção real.</p><span class="ts-meta">Regular 400 · 32px · Subtítulos</span></div>
+        <div class="ts"><p class="t3">"Seu corretor para a vida toda."</p><span class="ts-meta">Italic 400 · 20px · Citações</span></div>
+      </div>
+      <div class="typo-div"></div>
+      <div class="typo-col">
+        <div class="typo-col-head">Inter · Interface e textos</div>
+        <div class="ts"><p class="t4">Seguro Saúde para Médicos</p><span class="ts-meta">Bold 700 · 19px · Heading H2</span></div>
+        <div class="ts"><p class="t5">Planos individuais e familiares</p><span class="ts-meta">SemiBold 600 · 15px · H3</span></div>
+        <div class="ts"><p class="t6">Atendimento personalizado para profissionais de alta renda em Salvador. Seu corretor pelo ciclo completo da apólice.</p><span class="ts-meta">Regular 400 · 14px · Corpo</span></div>
+        <div class="ts"><p class="t7">Corretora de seguros — Salvador</p><span class="ts-meta">SemiBold 600 · 10px · Labels</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 07 — TOM DE VOZ ══════ -->
+<section class="slide tom-bg" id="s7">
+  <div class="inner">
+    <span class="slide-label">07 — Tom de voz</span>
+    <h2 class="slide-title">Como a marca<br>se comunica.</h2>
+    <div class="pillars">
+      <div class="pillar"><span class="p-num">01</span><span class="p-word">Segura</span><span class="p-desc">Transmite certeza. Entrega o que pode garantir.</span></div>
+      <div class="pillar"><span class="p-num">02</span><span class="p-word">Acolhedora</span><span class="p-desc">Recebe com empatia. Trata seguro como assunto sensível.</span></div>
+      <div class="pillar"><span class="p-num">03</span><span class="p-word">Especialista</span><span class="p-desc">Domina o assunto. Educa sem condescendência.</span></div>
+      <div class="pillar"><span class="p-num">04</span><span class="p-word">Humana</span><span class="p-desc">Fala de pessoa para pessoa, não de protocolo para número.</span></div>
+      <div class="pillar"><span class="p-num">05</span><span class="p-word">Confiante</span><span class="p-desc">Assertiva. Tem opinião. Indica. Não fica em cima do muro.</span></div>
+    </div>
+    <div class="voice-grid">
+      <div class="voice-box v-ok">
+        <span class="v-tag">Como a marca escreve</span>
+        <p class="v-quote">"Seu seguro CLT não foi feito para proteger o que você construiu como autônomo. Vamos conversar sobre o que faz sentido para a sua realidade."</p>
+        <span class="v-note">Direto, consultivo, respeita a inteligência do cliente.</span>
+      </div>
+      <div class="voice-box v-no">
+        <span class="v-tag">Como não escrever</span>
+        <p class="v-quote">"Aproveite nossas incríveis ofertas com os melhores preços! Temos produtos para todos os perfis. Fale com um atendente agora!"</p>
+        <span class="v-note">Genérico e impessoal. Poderia ser qualquer empresa.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 08 — APLICAÇÕES ══════ -->
+<section class="slide app-bg" id="s8">
+  <div class="inner">
+    <span class="slide-label">08 — Aplicações</span>
+    <h2 class="slide-title">A marca no<br>mundo real.</h2>
+    <div class="app-grid">
+
+      <!-- Cartão 3D -->
+      <div class="app-cell">
+        <div class="app-preview" style="background:#EEF2F7;">
+          <div class="card-stack">
+            <div class="bcard third"></div>
+            <div class="bcard back">
+              <img class="bc-back-logo" src="assets/base/full/base_logo_white_background.png" alt="">
+              <span class="bc-back-name">Gabriel Vital</span>
+              <span class="bc-back-role">Corretor de Seguros</span>
+            </div>
+            <div class="bcard front">
+              <img class="bc-logo" src="assets/black/full/white_logo_transparent_background.png" alt="">
+              <div class="bc-info">
+                <span class="bc-name">Gabriel Vital</span>
+                <span class="bc-role">Corretor de Seguros · SUSEP</span>
+                <span class="bc-phone">(71) 9 9999-9999</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app-meta"><strong>Cartão de visita</strong><span>Frente navy · Verso branco · Mockup 3D</span></div>
+      </div>
+
+      <!-- Header -->
+      <div class="app-cell">
+        <div class="app-preview" style="background:#F0F4F8;flex-direction:column;gap:12px;">
+          <div class="hdr-mock">
+            <img class="hdr-logo" src="assets/black/full/white_logo_transparent_background.png" alt="">
+            <div class="hdr-nav"><span>Produtos</span><span>Sobre</span></div>
+            <div class="hdr-cta">WhatsApp</div>
+          </div>
+          <p style="font-size:10px;color:#9CA3AF;text-align:center;">Header do site — modo escuro</p>
+        </div>
+        <div class="app-meta"><strong>Header institucional</strong><span>Navy · Logo branca transparente</span></div>
+      </div>
+
+      <!-- Avatar -->
+      <div class="app-cell">
+        <div class="app-preview" style="background:#F7F8FA;flex-direction:column;gap:20px;padding:32px 40px;">
+          <div class="av-row" style="justify-content:center;">
+            <div class="av-item">
+              <div class="av-circle" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+              <span class="av-lbl">WhatsApp</span>
+            </div>
+            <div class="av-item">
+              <div class="av-circle" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+              <span class="av-lbl">Instagram</span>
+            </div>
+            <div class="av-item">
+              <div class="av-circle" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+              <span class="av-lbl">Telegram</span>
+            </div>
+          </div>
+          <div class="av-row" style="justify-content:center;">
+            <div class="av-item">
+              <div class="av-sq" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+              <span class="av-lbl">LinkedIn</span>
+            </div>
+            <div class="av-item">
+              <div class="av-sq" style="background-color:#003A70;background-image:url('assets/color1/icon/white_icon_color1_background.png');"></div>
+              <span class="av-lbl">Facebook</span>
+            </div>
+            <div class="av-item">
+              <div class="av-sq" style="background-color:#FFFFFF;background-image:url('assets/base/icon/base_icon_white_background.png');border:1px solid rgba(0,0,0,0.08);"></div>
+              <span class="av-lbl">Google</span>
+            </div>
+          </div>
+        </div>
+        <div class="app-meta"><strong>Avatar digital</strong><span>Circular (WhatsApp · Instagram · Telegram) · Quadrado (LinkedIn · Facebook · Google)</span></div>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="app-cell">
+        <div class="app-preview" style="background:#F0F0F0;">
+          <div class="wa">
+            <div class="wa-bubble">
+              <span class="wa-sender">Gabriel · Seu Legado Seguro</span>
+              <span class="wa-text">Olá, Dr. João! Sua apólice de saúde renova em 30 dias. Posso avaliar sua cobertura atual e sugerir ajustes?</span>
+              <span class="wa-time">17:10 ✓✓</span>
+            </div>
+          </div>
+        </div>
+        <div class="app-meta"><strong>Mensagem WhatsApp</strong><span>Tom consultivo · Sem pressão · Identificação clara</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════ 09 — PADRÃO ══════ -->
+<section class="padrao-slide" id="s9">
+  <div class="padrao-left">
+    <div class="padrao-repeat"></div>
+    <div class="padrao-left-content">
+      <img src="assets/black/full/white_logo_transparent_background.png" alt="Seu Legado Seguro">
+      <p>Padrão sobre navy</p>
+    </div>
+  </div>
+  <div class="padrao-right">
+    <div class="padrao-repeat-light"></div>
+    <div class="padrao-right-content">
+      <div class="padrao-card">
+        <div style="width:100px;height:100px;border-radius:14px;background-color:#FFFFFF;background-image:url('assets/base/icon/base_icon_white_background.png');background-size:65%;background-position:center;background-repeat:no-repeat;margin:0 auto 20px;box-shadow:0 6px 20px rgba(0,58,112,0.15);border:1px solid rgba(0,58,112,0.08);"></div>
+        <div class="padrao-card-name">Seu Legado<br>Seguro</div>
+        <div class="padrao-card-sub">Corretora de Seguros</div>
+      </div>
+      <p>Padrão sobre claro</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ FINAL ══════ -->
+<section class="slide final" id="s_final">
+  <img src="assets/base/full/base_logo_transparent_background.png" alt="Seu Legado Seguro">
+  <div class="final-rule"></div>
+  <p class="final-text">Identidade Visual</p>
+  <p class="final-foot">Seu Legado Seguro &nbsp;·&nbsp; Corretora de Seguros &nbsp;·&nbsp; Salvador, BA &nbsp;·&nbsp; 2025</p>
+</section>
+
+<script>
+const dots = document.querySelectorAll('.nav-dot');
+const sections = document.querySelectorAll('.slide, .padrao-slide');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const i = Array.from(sections).indexOf(e.target);
+      dots.forEach((d, j) => d.classList.toggle('active', j === i));
+    }
+  });
+}, { threshold: 0.5 });
+sections.forEach(s => obs.observe(s));
+dots.forEach((d, i) => d.addEventListener('click', () => sections[i].scrollIntoView({ behavior: 'smooth' })));
+</script>
+</body>
+</html>
