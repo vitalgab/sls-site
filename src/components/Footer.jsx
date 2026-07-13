@@ -10,7 +10,7 @@ export default function Footer() {
           {/* Coluna principal */}
           <div>
             <img
-              src="/assets/logo-white-transparent.png"
+              src={`${import.meta.env.BASE_URL}assets/logo-white-transparent.png`}
               alt="Seu Legado Seguro"
               style={{ height: 52, width: 'auto', marginBottom: 20 }}
             />

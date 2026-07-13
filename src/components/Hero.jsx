@@ -103,7 +103,7 @@ export default function Hero() {
             width: 300, height: 300,
             background: 'var(--navy)',
             borderRadius: 28,
-            backgroundImage: "url('/assets/icon-navy-bg.png')",
+            backgroundImage: `url('${import.meta.env.BASE_URL}assets/icon-navy-bg.png')`,
             backgroundSize: '58%',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',

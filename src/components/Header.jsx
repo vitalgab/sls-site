@@ -33,7 +33,7 @@ export default function Header() {
       }}>
         <a href="#inicio" style={{ display: 'flex', alignItems: 'center' }}>
           <img
-            src="/assets/logo-color-transparent.png"
+            src={`${import.meta.env.BASE_URL}assets/logo-color-transparent.png`}
             alt="Seu Legado Seguro"
             style={{ height: 48, width: 'auto' }}
           />
