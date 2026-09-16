@@ -1,33 +1,39 @@
-const personas = [
+const perfis = [
   {
+    photo: 'assets/persona-rc-profissional.jpg',
+    photoAlt: 'Profissional liberal',
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+    title: 'Profissionais Liberais',
+    subtitle: 'RC Profissional · Vida · Previdência',
+    desc: 'Autônomo não tem rede de proteção corporativa. Sua segurança depende das escolhas que você faz hoje — e nós ajudamos a fazer as escolhas certas.',
+  },
+  {
+    photo: 'assets/persona-medico.jpg',
+    photoAlt: 'Médico',
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
       </svg>
     ),
-    title: 'Médicos',
-    desc: 'Você dedica anos estudando para construir uma carreira sólida. Mas e se uma reclamação de paciente, um afastamento por doença ou a falta de planejamento na aposentadoria colocarem tudo isso em risco?',
-    highlight: 'RC Profissional · Saúde · Previdência',
+    title: 'Médicos e Profissionais de Saúde',
+    subtitle: 'Plano de Saúde · Vida · RC Médico',
+    desc: 'Uma carreira construída com anos de estudo merece uma proteção à altura. Coberturas específicas para profissionais da saúde — com plano de saúde e RC médico.',
   },
   {
+    photo: 'assets/persona-advogado.jpg',
+    photoAlt: 'Advogado e profissional liberal',
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971z" />
+      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
       </svg>
     ),
-    title: 'Advogados e Profissionais Liberais',
-    desc: 'Profissionais autônomos não têm FGTS, INSS robusto, nem proteção corporativa. A segurança que você tem hoje depende exclusivamente do que você construiu — e de como protege isso.',
-    highlight: 'Vida · Previdência · RC Profissional',
-  },
-  {
-    icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-      </svg>
-    ),
-    title: 'Famílias que pensam no legado',
-    desc: 'Seguro de vida e previdência não são gastos — são instrumentos de planejamento. Garantem que o padrão de vida da sua família se mantenha mesmo diante de imprevistos ou na sua aposentadoria.',
-    highlight: 'Vida · Previdência · Saúde familiar',
+    title: 'Advogados',
+    subtitle: 'RC Profissional · Previdência · Vida',
+    desc: 'Para quem constrói seu próprio escritório ou atua em sociedade. RC Profissional e previdência privada são os pilares da sua proteção como operador do direito.',
   },
 ]
 
@@ -38,61 +44,72 @@ export default function ParaQuem() {
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
           <span className="section-eyebrow">Para quem é</span>
           <h2 className="section-title" style={{ margin: '0 auto 16px' }}>
-            Proteção para quem mais precisa de cobertura real
+            Para quem constrói patrimônio,<br />carreira e legado
           </h2>
           <p className="section-sub" style={{ margin: '0 auto', textAlign: 'center' }}>
-            Profissionais de alta renda têm necessidades que um seguro CLT jamais vai cobrir.
+            Cada perfil tem necessidades diferentes. Nós entendemos isso — e encontramos a proteção certa para cada um.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-          {personas.map(p => (
-            <div key={p.title} style={{
+        <div className="paraquem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {perfis.map(p => (
+            <div key={p.title} className="paraquem-card" style={{
               background: 'var(--white)',
-              border: '1px solid var(--gray-200)',
+              border: '1.5px solid var(--gray-200)',
               borderRadius: 'var(--radius-lg)',
-              padding: 36,
+              overflow: 'hidden',
               boxShadow: 'var(--shadow)',
-              transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
-              e.currentTarget.style.borderColor = 'var(--steel)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'none'
-              e.currentTarget.style.boxShadow = 'var(--shadow)'
-              e.currentTarget.style.borderColor = 'var(--gray-200)'
-            }}
-            >
-              <div style={{
-                width: 52, height: 52, borderRadius: 12,
-                background: 'var(--steel-light)',
-                color: 'var(--navy)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 24,
-              }}>
-                {p.icon}
+              transition: 'transform 0.22s, box-shadow 0.22s, border-color 0.22s',
+            }}>
+              <div style={{ height: 300, overflow: 'hidden', position: 'relative', background: '#1A5C8B' }}>
+                <img
+                  src={`${import.meta.env.BASE_URL}${p.photo}`}
+                  alt={p.photoAlt}
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom', display: 'block' }}
+                />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(0deg, rgba(0,20,52,0.35) 0%, transparent 40%)',
+                }} />
               </div>
-              <h3 style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 22, fontWeight: 600, color: 'var(--navy)', marginBottom: 12,
-              }}>{p.title}</h3>
-              <p style={{ color: 'var(--gray-600)', lineHeight: 1.75, marginBottom: 24, fontSize: 15 }}>{p.desc}</p>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'var(--steel-light)', color: 'var(--navy)',
-                fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 20,
-                letterSpacing: 0.2,
-              }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                {p.highlight}
+
+              <div style={{ padding: '0 28px', marginTop: -28, position: 'relative', zIndex: 1 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: 14,
+                  background: 'var(--white)',
+                  boxShadow: '0 4px 16px rgba(0,58,112,0.14)',
+                  border: '2px solid var(--steel-light)',
+                  color: 'var(--navy)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {p.icon}
+                </div>
+              </div>
+
+              <div style={{ padding: '14px 28px 32px' }}>
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 21, fontWeight: 600, color: 'var(--navy)',
+                  marginBottom: 10, lineHeight: 1.25,
+                }}>{p.title}</h3>
+                <p style={{ color: 'var(--gray-600)', lineHeight: 1.75, fontSize: 14 }}>{p.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <style>{`
+        .paraquem-card:hover {
+          transform: translateY(-5px);
+          box-shadow: var(--shadow-lg) !important;
+          border-color: var(--steel) !important;
+        }
+        @media (max-width: 900px) {
+          .paraquem-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </section>
   )
 }

@@ -3,57 +3,56 @@ const WA_NUMBER = '5571999999999'
 const produtos = [
   {
     id: 'saude',
-    featured: true,
     icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
       </svg>
     ),
-    title: 'Seguro Saúde',
-    tag: 'Mais procurado',
-    desc: 'Acesso aos melhores hospitais e clínicas do Brasil. Planos individuais e familiares com coberturas amplas e atendimento personalizado na escolha.',
-    items: ['Internação e cirurgias', 'Exames e consultas', 'Saúde mental inclusa', 'Reembolso de despesas', 'Planos nacionais e regionais'],
-    cta: 'Simular plano de saúde',
+    featured: true,
+    title: 'Plano de Saúde',
+    tag: 'Saúde',
+    desc: 'Acesso aos melhores hospitais e clínicas. Planos individuais e familiares com coberturas amplas e atendimento personalizado na escolha.',
+    items: ['Internação e cirurgias', 'Exames e consultas', 'Saúde mental inclusa', 'Reembolso de despesas'],
+    cta: 'Simular plano',
   },
   {
     id: 'vida',
     icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
       </svg>
     ),
     title: 'Seguro de Vida',
-    tag: 'Proteção familiar',
-    desc: 'Garante que sua família mantenha o padrão de vida mesmo diante de imprevistos. Indenização em morte, invalidez, doenças graves e diária por incapacidade.',
+    tag: 'Vida',
+    desc: 'Garante que sua família mantenha o padrão de vida mesmo diante de imprevistos. Indenização em morte, invalidez e doenças graves.',
     items: ['Indenização por morte', 'Invalidez permanente', 'Doenças graves (câncer, AVC...)', 'Diária hospitalar'],
-    cta: 'Quero proteção de vida',
+    cta: 'Quero cobertura de vida',
   },
   {
     id: 'previdencia',
     icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
       </svg>
     ),
     title: 'Previdência Privada',
-    tag: 'Aposentadoria planejada',
+    tag: 'Previdência',
     desc: 'Complemento ao INSS ou construção de patrimônio para a aposentadoria. PGBL ou VGBL com eficiência fiscal e liberdade de resgate.',
     items: ['PGBL e VGBL', 'Dedução no IR (PGBL)', 'Portabilidade entre planos', 'Benefício de risco incluso'],
-    cta: 'Planejar minha aposentadoria',
+    cta: 'Planejar aposentadoria',
   },
   {
     id: 'rc',
     icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971z" />
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
       </svg>
     ),
     title: 'RC Profissional',
-    tag: 'Em breve',
-    desc: 'Para médicos, advogados e outros profissionais que precisam de cobertura contra reclamações e processos decorrentes de erros ou omissões profissionais.',
-    items: ['RC Médico', 'RC Advogado', 'Custas processuais', 'Honorários de defesa'],
-    cta: 'Me avise quando disponível',
-    comingSoon: true,
+    tag: 'Responsabilidade',
+    desc: 'Para médicos, advogados e outros profissionais. Cobertura contra reclamações e processos decorrentes de erros ou omissões profissionais.',
+    items: ['RC Médico e Advogado', 'Custas processuais', 'Honorários de defesa', 'Cobertura retroativa'],
+    cta: 'Contratar RC Profissional',
   },
 ]
 
@@ -61,55 +60,52 @@ export default function Produtos() {
   return (
     <section id="produtos" style={{ background: 'var(--white)' }}>
       <div className="container">
-        <div style={{ marginBottom: 60 }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <span className="section-eyebrow">Produtos</span>
-          <h2 className="section-title">Soluções para cada fase da sua vida</h2>
-          <p className="section-sub">
-            Do plano de saúde à aposentadoria. Trabalhamos com as melhores seguradoras
-            para encontrar a cobertura certa para você.
+          <h2 className="section-title" style={{ margin: '0 auto 16px' }}>
+            Soluções para cada fase da sua vida
+          </h2>
+          <p className="section-sub" style={{ margin: '0 auto', textAlign: 'center' }}>
+            Do plano de saúde à aposentadoria. Trabalhamos com as melhores seguradoras para encontrar a cobertura certa para você.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+        <div className="produtos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
           {produtos.map(p => (
             <div key={p.id} style={{
               borderRadius: 'var(--radius-lg)',
-              border: p.featured ? '2px solid var(--navy)' : '1px solid var(--gray-200)',
+              border: p.featured ? '2px solid var(--navy)' : '1.5px solid var(--gray-200)',
               background: p.featured ? 'var(--navy)' : 'var(--white)',
-              padding: 32,
-              display: 'flex', flexDirection: 'column',
+              padding: '28px 24px',
+              display: 'flex',
+              flexDirection: 'column',
               position: 'relative',
-              opacity: p.comingSoon ? 0.75 : 1,
-              boxShadow: p.featured ? 'var(--shadow-lg)' : 'var(--shadow)',
+              boxShadow: p.featured ? '0 16px 56px rgba(0,30,65,0.22)' : 'var(--shadow)',
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}
             onMouseEnter={e => {
-              if (!p.comingSoon) {
-                e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.boxShadow = p.featured
-                  ? '0 16px 56px rgba(0,58,112,0.28)'
-                  : 'var(--shadow-lg)'
-              }
+              e.currentTarget.style.transform = 'translateY(-4px)'
+              e.currentTarget.style.boxShadow = p.featured ? '0 24px 64px rgba(0,30,65,0.30)' : 'var(--shadow-lg)'
             }}
             onMouseLeave={e => {
               e.currentTarget.style.transform = 'none'
-              e.currentTarget.style.boxShadow = p.featured ? 'var(--shadow-lg)' : 'var(--shadow)'
+              e.currentTarget.style.boxShadow = p.featured ? '0 16px 56px rgba(0,30,65,0.22)' : 'var(--shadow)'
             }}
             >
               {p.tag && (
                 <span style={{
-                  position: 'absolute', top: -13, left: 24,
-                  background: p.featured ? 'var(--white)' : p.comingSoon ? 'var(--gray-600)' : 'var(--navy)',
-                  color: p.featured ? 'var(--navy)' : 'white',
-                  fontSize: 11, fontWeight: 700,
+                  position: 'absolute', top: -12, left: 20,
+                  background: p.featured ? 'var(--white)' : 'var(--navy)',
+                  color: p.featured ? 'var(--navy)' : '#fff',
+                  fontSize: 10, fontWeight: 700,
                   padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5,
                 }}>{p.tag}</span>
               )}
 
               <div style={{
-                width: 52, height: 52, borderRadius: 12, marginBottom: 20,
-                background: p.featured ? 'rgba(255,255,255,0.12)' : 'var(--steel-light)',
-                color: p.featured ? 'var(--white)' : 'var(--navy)',
+                width: 60, height: 60, borderRadius: 14, marginBottom: 20,
+                background: p.featured ? 'rgba(255,255,255,0.14)' : 'var(--steel-light)',
+                color: p.featured ? '#fff' : 'var(--navy)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {p.icon}
@@ -117,44 +113,59 @@ export default function Produtos() {
 
               <h3 style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 22, fontWeight: 600,
-                color: p.featured ? 'var(--white)' : 'var(--navy)',
-                marginBottom: 10,
+                fontSize: 21, fontWeight: 600,
+                color: p.featured ? '#fff' : 'var(--navy)',
+                marginBottom: 8,
               }}>
                 {p.title}
               </h3>
               <p style={{
-                fontSize: 14, lineHeight: 1.75, flex: 1, marginBottom: 20,
-                color: p.featured ? 'rgba(255,255,255,0.75)' : 'var(--gray-600)',
+                fontSize: 13, lineHeight: 1.75, flex: 1, marginBottom: 20,
+                color: p.featured ? 'rgba(255,255,255,0.72)' : 'var(--gray-600)',
               }}>
                 {p.desc}
               </p>
 
-              <ul style={{ listStyle: 'none', marginBottom: 28, display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <ul style={{ listStyle: 'none', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {p.items.map(item => (
                   <li key={item} style={{
                     display: 'flex', alignItems: 'center', gap: 8,
-                    fontSize: 13, color: p.featured ? 'rgba(255,255,255,0.85)' : 'var(--gray-800)',
+                    fontSize: 12, color: p.featured ? 'rgba(255,255,255,0.85)' : 'var(--gray-800)',
                   }}>
-                    <span style={{ color: p.featured ? 'rgba(255,255,255,0.6)' : 'var(--navy)', flexShrink: 0, fontSize: 16 }}>✓</span>
+                    <span style={{
+                      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                      background: p.featured ? 'rgba(255,255,255,0.14)' : 'var(--steel-light)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: p.featured ? '#fff' : 'var(--navy)',
+                      fontSize: 9, fontWeight: 700,
+                    }}>✓</span>
                     {item}
                   </li>
                 ))}
               </ul>
 
+              <p style={{
+                fontSize: 11,
+                fontStyle: 'italic',
+                marginBottom: 28,
+                color: p.featured ? 'rgba(255,255,255,0.5)' : 'var(--gray-500)',
+              }}>
+                dentre outras...
+              </p>
+
               <a
-                href={p.comingSoon ? '#contato' : `https://wa.me/${WA_NUMBER}?text=Olá,%20tenho%20interesse%20em%20${encodeURIComponent(p.title)}`}
-                target={p.comingSoon ? '_self' : '_blank'}
-                rel="noopener"
+                href={`https://wa.me/${WA_NUMBER}?text=Olá,%20tenho%20interesse%20em%20${encodeURIComponent(p.title)}`}
+                target="_blank" rel="noopener"
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '12px 20px', borderRadius: 'var(--radius)',
-                  background: p.featured ? 'var(--white)' : 'transparent',
-                  border: p.featured ? 'none' : '1.5px solid var(--navy)',
-                  color: p.featured ? 'var(--navy)' : 'var(--navy)',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '11px 16px', borderRadius: 'var(--radius)',
+                  background: p.featured ? '#fff' : 'var(--navy)',
+                  color: p.featured ? 'var(--navy)' : '#fff',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  transition: 'opacity 0.2s', textDecoration: 'none',
                 }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
                 {p.cta}
               </a>
@@ -162,13 +173,42 @@ export default function Produtos() {
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: 36, color: 'var(--gray-600)', fontSize: 14 }}>
-          Também trabalhamos com seguro auto, residencial e empresarial.{' '}
-          <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener"
-            style={{ color: 'var(--navy)', fontWeight: 600, borderBottom: '1px solid var(--steel)' }}>
-            Fale com a gente.
+        <div style={{ textAlign: 'center', marginTop: 44 }}>
+          <a
+            href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20saber%20mais%20sobre%20outros%20tipos%20de%20seguro`}
+            target="_blank" rel="noopener"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+              border: '2px solid var(--navy)', borderRadius: 50,
+              padding: '15px 40px',
+              color: 'var(--navy)', fontWeight: 600, fontSize: 15,
+              fontFamily: 'var(--font-body)',
+              transition: 'background 0.2s, color 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--navy)'
+              e.currentTarget.style.color = '#fff'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'var(--navy)'
+            }}
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Seguros de demais ramos — Auto, Residencial, Empresarial e mais
           </a>
-        </p>
+        </div>
+
+        <style>{`
+          @media (max-width: 900px) {
+            .produtos-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+          @media (max-width: 520px) {
+            .produtos-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
       </div>
     </section>
   )

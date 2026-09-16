@@ -3,26 +3,25 @@ const SUSEP = 'XXXXXXXXXX'
 
 export default function Footer() {
   return (
-    <footer style={{ background: 'var(--navy-dark)', color: 'rgba(255,255,255,0.65)', paddingTop: 64, paddingBottom: 36 }}>
+    <footer style={{ background: 'var(--navy-dark)', color: 'rgba(255,255,255,0.6)', paddingTop: 72, paddingBottom: 40 }}>
       <div className="container">
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 52, marginBottom: 52 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 52, marginBottom: 56 }}>
 
           {/* Coluna principal */}
           <div>
             <img
               src={`${import.meta.env.BASE_URL}assets/logo-white-transparent.png`}
               alt="Seu Legado Seguro"
-              style={{ height: 52, width: 'auto', marginBottom: 20 }}
+              style={{ height: 90, width: 'auto', marginBottom: 22 }}
             />
-            <p style={{ fontSize: 14, lineHeight: 1.8, maxWidth: 300 }}>
-              Corretora de seguros em Salvador especializada em proteção para médicos,
-              advogados e profissionais liberais.
+            <p style={{ fontSize: 14, lineHeight: 1.85, maxWidth: 300, marginBottom: 24 }}>
+              Corretora de seguros especializada em proteção para médicos, advogados e profissionais liberais em todo o Brasil.
             </p>
             <a
               href={`https://wa.me/${WA_NUMBER}`}
               target="_blank" rel="noopener"
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 24,
+                display: 'inline-flex', alignItems: 'center', gap: 8,
                 color: '#4ade80', fontWeight: 600, fontSize: 14, transition: 'opacity 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
@@ -38,15 +37,18 @@ export default function Footer() {
 
           {/* Produtos */}
           <div>
-            <h4 style={{ color: 'var(--white)', fontWeight: 700, fontSize: 11, marginBottom: 20, letterSpacing: 2.5, textTransform: 'uppercase' }}>
+            <h4 style={{
+              color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
+              fontSize: 11, marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
+            }}>
               Produtos
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {['Seguro Saúde', 'Seguro de Vida', 'Previdência Privada', 'RC Profissional', 'Seguro Auto', 'Seguro Residencial'].map(item => (
+              {['Plano de Saúde', 'Seguro de Vida', 'Previdência Privada', 'RC Profissional', 'Demais Ramos'].map(item => (
                 <li key={item}>
                   <a href="#produtos" style={{ fontSize: 14, transition: 'color 0.2s' }}
                     onMouseEnter={e => e.target.style.color = 'white'}
-                    onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.65)'}
+                    onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.6)'}
                   >{item}</a>
                 </li>
               ))}
@@ -55,7 +57,10 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 style={{ color: 'var(--white)', fontWeight: 700, fontSize: 11, marginBottom: 20, letterSpacing: 2.5, textTransform: 'uppercase' }}>
+            <h4 style={{
+              color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
+              fontSize: 11, marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
+            }}>
               Links
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -67,7 +72,7 @@ export default function Footer() {
                 <li key={item.label}>
                   <a href={item.href} style={{ fontSize: 14, transition: 'color 0.2s' }}
                     onMouseEnter={e => e.target.style.color = 'white'}
-                    onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.65)'}
+                    onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.6)'}
                   >{item.label}</a>
                 </li>
               ))}
@@ -81,20 +86,19 @@ export default function Footer() {
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
         }}>
-          <p style={{ fontSize: 13 }}>© 2025 Seu Legado Seguro. Todos os direitos reservados.</p>
-          <p style={{ fontSize: 13 }}>Corretor SUSEP nº {SUSEP} · Salvador, BA</p>
+          <p style={{ fontSize: 13 }}>© 2025 Seu Legado Seguro · Todos os direitos reservados.</p>
+          <p style={{ fontSize: 13 }}>Corretor SUSEP nº {SUSEP}</p>
         </div>
       </div>
 
       <style>{`
         @media (max-width: 768px) {
-          footer .container > div:first-child {
+          footer > div > div:first-child {
             grid-template-columns: 1fr !important;
             gap: 36px !important;
           }
-          footer .container > div:last-child {
-            flex-direction: column;
-            align-items: flex-start;
+          footer > div > div:last-child {
+            flex-direction: column; align-items: flex-start;
           }
         }
       `}</style>

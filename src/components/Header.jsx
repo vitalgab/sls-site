@@ -24,18 +24,18 @@ export default function Header() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       background: 'var(--white)',
       borderBottom: scrolled ? '1px solid var(--gray-200)' : '1px solid transparent',
-      boxShadow: scrolled ? '0 2px 20px rgba(0,58,112,0.07)' : 'none',
+      boxShadow: scrolled ? '0 2px 20px rgba(0,58,112,0.08)' : 'none',
       transition: 'border-color 0.3s, box-shadow 0.3s',
     }}>
       <div className="container" style={{
         display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', height: 72,
+        justifyContent: 'space-between', height: 88,
       }}>
-        <a href="#inicio" style={{ display: 'flex', alignItems: 'center' }}>
+        <a href="#inicio">
           <img
             src={`${import.meta.env.BASE_URL}assets/logo-color-transparent.png`}
             alt="Seu Legado Seguro"
-            style={{ height: 48, width: 'auto' }}
+            style={{ height: 90, width: 'auto', display: 'block' }}
           />
         </a>
 
@@ -58,7 +58,7 @@ export default function Header() {
             className="btn-primary"
             href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20cotação`}
             target="_blank" rel="noopener"
-            style={{ padding: '10px 20px', fontSize: 14 }}
+            style={{ padding: '11px 22px', fontSize: 14 }}
           >
             Solicitar cotação
           </a>

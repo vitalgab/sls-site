@@ -1,49 +1,167 @@
+import { useState, useEffect } from 'react'
+
 const WA_NUMBER = '5571999999999'
 
-const stats = [
-  { num: '10+', label: 'Anos de experiência' },
-  { num: '500+', label: 'Famílias protegidas' },
-  { num: '15+', label: 'Seguradoras parceiras' },
+const slides = [
+  { url: 'https://images.unsplash.com/photo-1484665754804-74b091211472?w=1440&q=90&fit=crop&auto=format', alt: 'Família feliz' },
+  { url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1440&q=90&fit=crop&auto=format', alt: 'Patrimônio protegido' },
+  { url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1440&q=90&fit=crop&auto=format', alt: 'Carreira profissional' },
 ]
 
+const iconeWhats = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.847L.057 23.882l6.198-1.447A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.887 9.887 0 01-5.031-1.376l-.362-.214-3.68.859.874-3.595-.235-.373A9.88 9.88 0 012.106 12C2.106 6.58 6.58 2.106 12 2.106c5.42 0 9.894 4.474 9.894 9.894 0 5.42-4.474 9.894-9.894 9.894z"/>
+  </svg>
+)
+
+function FormularioCotacao() {
+  const [form, setForm] = useState({ nome: '', telefone: '', interesse: '' })
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    const texto = `Olá! Me chamo *${form.nome}*.\nTenho interesse em: ${form.interesse || 'não informado'}\nMeu WhatsApp: ${form.telefone}`
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(texto)}`, '_blank')
+  }
+
+  const campoStyle = {
+    width: '100%',
+    padding: '12px 14px',
+    border: '1.5px solid #CDD9EA',
+    borderRadius: 8,
+    fontSize: 14,
+    outline: 'none',
+    fontFamily: 'var(--font-body)',
+    color: '#1C2E45',
+    background: '#fff',
+    transition: 'border-color 0.2s',
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ marginBottom: 8 }}>
+        <h3 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 22, fontWeight: 600, color: 'var(--navy)',
+          lineHeight: 1.2, marginBottom: 6,
+        }}>
+          Solicite uma cotação grátis
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.5 }}>
+          Resposta em até 24h · Sem compromisso
+        </p>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Seu nome completo"
+        required
+        value={form.nome}
+        onChange={e => setForm(prev => ({ ...prev, nome: e.target.value }))}
+        style={campoStyle}
+        onFocus={e => e.target.style.borderColor = 'var(--navy)'}
+        onBlur={e => e.target.style.borderColor = '#CDD9EA'}
+      />
+      <input
+        type="tel"
+        placeholder="WhatsApp com DDD"
+        required
+        value={form.telefone}
+        onChange={e => setForm(prev => ({ ...prev, telefone: e.target.value }))}
+        style={campoStyle}
+        onFocus={e => e.target.style.borderColor = 'var(--navy)'}
+        onBlur={e => e.target.style.borderColor = '#CDD9EA'}
+      />
+      <select
+        value={form.interesse}
+        onChange={e => setForm(prev => ({ ...prev, interesse: e.target.value }))}
+        style={{
+          ...campoStyle,
+          color: form.interesse ? '#1C2E45' : '#94a3b8',
+          appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23003A70' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 12px center',
+          paddingRight: 40,
+        }}
+      >
+        <option value="">Tenho interesse em...</option>
+        <option>Plano de Saúde</option>
+        <option>Seguro de Vida</option>
+        <option>Previdência Privada</option>
+        <option>RC Profissional</option>
+        <option>Mais de um produto</option>
+      </select>
+
+      <button type="submit" className="btn-primary" style={{ justifyContent: 'center', marginTop: 4, padding: '14px 24px', fontSize: 15 }}>
+        {iconeWhats}
+        Enviar pelo WhatsApp
+      </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 12, borderTop: '1px solid #EEF4FB' }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B6280" strokeWidth="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+        <span style={{ fontSize: 11, color: 'var(--gray-600)' }}>
+          Seus dados são protegidos e nunca compartilhados
+        </span>
+      </div>
+    </form>
+  )
+}
+
 export default function Hero() {
+  const [slide, setSlide] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => { setSlide(s => (s + 1) % slides.length) }, 5000)
+    return () => clearInterval(id)
+  }, [])
+
   return (
     <section id="inicio" style={{
-      background: 'var(--white)',
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
-      paddingTop: 72,
       position: 'relative',
       overflow: 'hidden',
+      paddingTop: 88,
     }}>
-      {/* Fundo decorativo suave */}
+      {slides.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url('${s.url}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+          zIndex: 0,
+          opacity: +(i === slide),
+          transition: 'opacity 1.2s ease-in-out',
+        }} />
+      ))}
+
       <div style={{
         position: 'absolute',
-        top: 0, right: 0,
-        width: '48%', height: '100%',
-        background: 'var(--steel-light)',
-        clipPath: 'polygon(8% 0%, 100% 0%, 100% 100%, 0% 100%)',
-        zIndex: 0,
+        inset: 0,
+        background: 'linear-gradient(95deg, rgba(0,20,52,0.97) 0%, rgba(0,20,52,0.92) 35%, rgba(0,20,52,0.70) 55%, rgba(0,20,52,0.25) 75%, rgba(0,20,52,0.05) 100%)',
+        zIndex: 1,
       }} />
 
-      <div className="container" style={{
+      <div className="container hero-grid" style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 64,
+        gridTemplateColumns: '1fr 400px',
+        gap: 56,
         alignItems: 'center',
         padding: '80px 28px',
-        position: 'relative', zIndex: 1,
+        position: 'relative',
+        zIndex: 2,
       }}>
-        {/* Coluna de texto */}
         <div>
-          <span className="section-eyebrow">Corretora de Seguros · Salvador, BA</span>
-
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(40px, 5.5vw, 68px)',
+            fontSize: 'clamp(42px, 5.5vw, 70px)',
             fontWeight: 600,
-            color: 'var(--navy)',
+            color: '#ffffff',
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
             marginBottom: 24,
@@ -53,114 +171,67 @@ export default function Hero() {
           </h1>
 
           <p style={{
-            fontSize: 18,
-            color: 'var(--gray-600)',
+            fontSize: 17,
+            color: 'rgba(255,255,255,0.72)',
             lineHeight: 1.8,
             marginBottom: 36,
-            maxWidth: 460,
+            maxWidth: 480,
           }}>
-            Seguro de saúde, vida e previdência para médicos, advogados e profissionais
-            liberais em Salvador. Atendimento personalizado. Cobertura real. Legado protegido.
+            Seguro de saúde, vida e previdência para médicos, advogados e profissionais liberais. Atendimento personalizado. Cobertura real.
           </p>
 
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <a className="btn-primary" href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20cotação%20gratuita`} target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.847L.057 23.882l6.198-1.447A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.887 9.887 0 01-5.031-1.376l-.362-.214-3.68.859.874-3.595-.235-.373A9.88 9.88 0 012.106 12C2.106 6.58 6.58 2.106 12 2.106c5.42 0 9.894 4.474 9.894 9.894 0 5.42-4.474 9.894-9.894 9.894z"/>
-              </svg>
-              Solicitar cotação grátis
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+            <a
+              className="btn-primary"
+              href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20cotação%20gratuita`}
+              target="_blank" rel="noopener"
+              style={{ background: '#fff', color: 'var(--navy)', border: '2px solid #fff', fontSize: 16, padding: '14px 28px' }}
+            >
+              {iconeWhats}
+              Falar pelo WhatsApp
             </a>
-            <a className="btn-outline" href="#produtos">
+            <a href="#produtos" className="btn-outline-white" style={{ fontSize: 15 }}>
               Conhecer produtos
             </a>
           </div>
 
-          <div style={{
-            display: 'flex', gap: 40, marginTop: 52,
-            paddingTop: 32, borderTop: '1px solid var(--gray-100)',
-          }}>
-            {stats.map(s => (
-              <div key={s.label}>
-                <div style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 34, fontWeight: 700, color: 'var(--navy)',
-                  lineHeight: 1,
-                }}>{s.num}</div>
-                <div style={{ fontSize: 12, color: 'var(--gray-600)', marginTop: 4, lineHeight: 1.4 }}>{s.label}</div>
-              </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 32 }}>
+            {slides.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setSlide(i)}
+                aria-label={`Slide ${i + 1}`}
+                style={{
+                  width: i === slide ? 28 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  border: 'none',
+                  background: i === slide ? '#fff' : 'rgba(255,255,255,0.35)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  padding: 0,
+                }}
+              />
             ))}
           </div>
         </div>
 
-        {/* Coluna visual */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', minHeight: 420,
+          background: '#ffffff',
+          borderRadius: 20,
+          padding: '32px 28px',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.28)',
         }}>
-          {/* Card principal com icon */}
-          <div style={{
-            width: 300, height: 300,
-            background: 'var(--navy)',
-            borderRadius: 28,
-            backgroundImage: `url('${import.meta.env.BASE_URL}assets/icon-navy-bg.png')`,
-            backgroundSize: '58%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            boxShadow: '0 32px 80px rgba(0,58,112,0.28)',
-            position: 'relative', zIndex: 2,
-          }} />
-
-          {/* Cartão flutuante - experiência */}
-          <div style={{
-            position: 'absolute', top: 32, right: -16,
-            background: 'var(--white)',
-            borderRadius: 14,
-            padding: '16px 22px',
-            boxShadow: '0 8px 32px rgba(0,58,112,0.13)',
-            border: '1px solid var(--gray-100)',
-            zIndex: 3,
-          }}>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 28, fontWeight: 700, color: 'var(--navy)', lineHeight: 1,
-            }}>10+</div>
-            <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 3 }}>Anos de experiência</div>
-          </div>
-
-          {/* Cartão flutuante - famílias */}
-          <div style={{
-            position: 'absolute', bottom: 40, left: -16,
-            background: 'var(--navy)',
-            borderRadius: 14,
-            padding: '16px 22px',
-            boxShadow: '0 8px 32px rgba(0,58,112,0.25)',
-            zIndex: 3,
-          }}>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 28, fontWeight: 700, color: 'var(--white)', lineHeight: 1,
-            }}>500+</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>Famílias protegidas</div>
-          </div>
+          <FormularioCotacao />
         </div>
       </div>
 
       <style>{`
-        @media (max-width: 768px) {
-          #inicio > .container {
+        @media (max-width: 900px) {
+          .hero-grid {
             grid-template-columns: 1fr !important;
-            gap: 0 !important;
-            padding: 60px 20px !important;
+            gap: 40px !important;
           }
-          #inicio > .container > div:last-child { display: none !important; }
-          #inicio > .container > div:first-child > div:last-child { gap: 24px !important; }
-        }
-        #inicio::before {
-          display: none;
-        }
-        @media (max-width: 768px) {
-          #inicio > div[style*="position: absolute"] { display: none !important; }
         }
       `}</style>
     </section>

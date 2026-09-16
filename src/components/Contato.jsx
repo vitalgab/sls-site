@@ -16,10 +16,7 @@ export default function Contato() {
   return (
     <>
       {/* Faixa CTA */}
-      <section style={{
-        background: 'var(--navy)',
-        padding: '80px 0',
-      }}>
+      <section style={{ background: 'var(--navy)', padding: '80px 0' }}>
         <div className="container" style={{ textAlign: 'center' }}>
           <span style={{
             display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: 3,
@@ -40,8 +37,7 @@ export default function Contato() {
             fontSize: 17, lineHeight: 1.75,
             marginBottom: 40, maxWidth: 500, margin: '0 auto 40px',
           }}>
-            Fale com um corretor que vai entender a sua necessidade e indicar a cobertura certa —
-            sem jargão, sem pressão.
+            Fale com um corretor que vai entender a sua necessidade e indicar a cobertura certa — sem jargão, sem pressão.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a
@@ -65,15 +61,22 @@ export default function Contato() {
 
       {/* Formulário */}
       <section id="contato" style={{ background: 'var(--gray-50)' }}>
-        <div className="container" style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+        <div className="container" style={{ maxWidth: 460, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <span className="section-eyebrow">Contato</span>
-            <h2 className="section-title" style={{ margin: '0 auto 12px' }}>Prefere preencher um formulário?</h2>
-            <p style={{ color: 'var(--gray-600)', fontSize: 15 }}>Preencha abaixo e entraremos em contato via WhatsApp.</p>
+            <h2 className="section-title" style={{ margin: '0 auto 8px', fontSize: 'clamp(22px, 3vw, 30px)' }}>
+              Prefere preencher um formulário?
+            </h2>
+            <p style={{ color: 'var(--gray-600)', fontSize: 13 }}>
+              Preencha abaixo e entraremos em contato via WhatsApp.
+            </p>
           </div>
 
           {enviado ? (
-            <div style={{ textAlign: 'center', padding: 56, background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-200)' }}>
+            <div style={{
+              textAlign: 'center', padding: 56, background: 'var(--white)',
+              borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-200)',
+            }}>
               <div style={{
                 width: 64, height: 64, borderRadius: '50%',
                 background: 'var(--steel-light)', color: 'var(--navy)',
@@ -89,8 +92,8 @@ export default function Contato() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{
-              display: 'flex', flexDirection: 'column', gap: 16,
-              background: 'var(--white)', padding: 40, borderRadius: 'var(--radius-lg)',
+              display: 'flex', flexDirection: 'column', gap: 12,
+              background: 'var(--white)', padding: '28px 24px', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--gray-200)', boxShadow: 'var(--shadow)',
             }}>
               {[
@@ -100,8 +103,8 @@ export default function Contato() {
               ].map(f => (
                 <div key={f.name}>
                   <label style={{
-                    display: 'block', fontSize: 12, fontWeight: 700,
-                    color: 'var(--navy)', marginBottom: 7, letterSpacing: 0.3,
+                    display: 'block', fontSize: 11, fontWeight: 700,
+                    color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                   }}>{f.label} {f.required && <span style={{ color: 'var(--navy)' }}>*</span>}</label>
                   <input
                     type={f.type}
@@ -110,9 +113,9 @@ export default function Contato() {
                     value={form[f.name]}
                     onChange={e => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}
                     style={{
-                      width: '100%', padding: '13px 16px',
+                      width: '100%', padding: '10px 14px',
                       border: '1.5px solid var(--gray-200)',
-                      borderRadius: 'var(--radius)', fontSize: 15,
+                      borderRadius: 'var(--radius)', fontSize: 13,
                       outline: 'none', transition: 'border-color 0.2s',
                       fontFamily: 'var(--font-body)',
                       color: 'var(--gray-800)',
@@ -125,23 +128,23 @@ export default function Contato() {
 
               <div>
                 <label style={{
-                  display: 'block', fontSize: 12, fontWeight: 700,
-                  color: 'var(--navy)', marginBottom: 7, letterSpacing: 0.3,
+                  display: 'block', fontSize: 11, fontWeight: 700,
+                  color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                 }}>Tenho interesse em</label>
                 <select
                   value={form.interesse}
                   onChange={e => setForm(prev => ({ ...prev, interesse: e.target.value }))}
                   style={{
-                    width: '100%', padding: '13px 16px',
+                    width: '100%', padding: '10px 14px',
                     border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 15,
+                    borderRadius: 'var(--radius)', fontSize: 13,
                     outline: 'none', background: 'white',
                     fontFamily: 'var(--font-body)',
                     color: form.interesse ? 'var(--gray-800)' : '#94a3b8',
                   }}
                 >
                   <option value="">Selecione um produto...</option>
-                  <option value="Seguro Saúde">Seguro Saúde</option>
+                  <option value="Plano de Saúde">Plano de Saúde</option>
                   <option value="Seguro de Vida">Seguro de Vida</option>
                   <option value="Previdência Privada">Previdência Privada</option>
                   <option value="RC Profissional">Responsabilidade Civil Profissional</option>
@@ -151,18 +154,18 @@ export default function Contato() {
 
               <div>
                 <label style={{
-                  display: 'block', fontSize: 12, fontWeight: 700,
-                  color: 'var(--navy)', marginBottom: 7, letterSpacing: 0.3,
+                  display: 'block', fontSize: 11, fontWeight: 700,
+                  color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                 }}>Mensagem (opcional)</label>
                 <textarea
                   placeholder="Conte um pouco sobre o que você precisa..."
-                  rows={4}
+                  rows={3}
                   value={form.mensagem}
                   onChange={e => setForm(prev => ({ ...prev, mensagem: e.target.value }))}
                   style={{
-                    width: '100%', padding: '13px 16px',
+                    width: '100%', padding: '10px 14px',
                     border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 15,
+                    borderRadius: 'var(--radius)', fontSize: 13,
                     outline: 'none', resize: 'vertical',
                     fontFamily: 'var(--font-body)',
                   }}
@@ -171,7 +174,7 @@ export default function Contato() {
                 />
               </div>
 
-              <button type="submit" className="btn-primary" style={{ justifyContent: 'center', fontSize: 15, padding: '14px' }}>
+              <button type="submit" className="btn-primary" style={{ justifyContent: 'center', fontSize: 14, padding: '12px' }}>
                 Enviar via WhatsApp
               </button>
             </form>
