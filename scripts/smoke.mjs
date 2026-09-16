@@ -276,7 +276,7 @@ async function varrerPagina (page) {
       textos: cards.filter(c => !c.querySelector('img')).map(c => c.textContent.trim()),
     }
   })
-  V('13 cartoes de seguradora', seg.cartoes === 13, `${seg.cartoes}`)
+  V('12 cartoes de seguradora', seg.cartoes === 12, `${seg.cartoes}`)
   V('11 logos como <img>', seg.imgs.length === 11, `${seg.imgs.length} imagens`)
   const semCarregar = seg.imgs.filter(i => !(i.nw > 0))
   V('todos os logos carregaram (naturalWidth > 0)', semCarregar.length === 0,
@@ -288,9 +288,14 @@ async function varrerPagina (page) {
   const alturas = seg.imgs.map(i => i.alt_alt)
   V('altura dos logos entre 14 e 42 px (teto uniforme)',
     alturas.every(h => h >= 14 && h <= 42), `min=${Math.min(...alturas)} max=${Math.max(...alturas)}`)
-  V('Icatu e NotreDame seguem como texto (logo oficial nao obtido)',
-    seg.textos.length === 2 && seg.textos.join('|').includes('Icatu') && seg.textos.join('|').includes('NotreDame'),
+  // Um cartao em texto, e ele tem de ser a Icatu. A NotreDame saiu da lista (a
+  // marca foi incorporada pela Hapvida); se voltar sem logo, isto morde.
+  V('so a Icatu segue como texto (logo oficial nao obtido)',
+    seg.textos.length === 1 && seg.textos[0].includes('Icatu'),
     JSON.stringify(seg.textos))
+  V('NotreDame nao aparece mais na secao',
+    !seg.textos.join('|').includes('NotreDame') && !seg.imgs.some(i => /notre/i.test(i.alt)),
+    `${seg.cartoes} cartoes`)
 
   // O fetch tem de sair DE DENTRO da pagina: page.request nao passa por
   // page.route(), entao um impostor que derruba o manifest nao alcancaria a

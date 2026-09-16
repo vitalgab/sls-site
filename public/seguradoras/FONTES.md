@@ -32,14 +32,19 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
   com `loading="lazy"`, então não pesa no primeiro carregamento.
 
 
-## Faltam dois, e o motivo
+## Falta um, e o motivo
 
-Estes continuam como **texto** em `src/components/Seguradoras.jsx`, não como imagem.
-Nenhum logo foi inventado para eles.
+Este continua como **texto** em `src/components/Seguradoras.jsx`, não como imagem.
+Nenhum logo foi inventado para ele.
 
 | marca | o que aconteceu | o que resolve |
 |---|---|---|
 | **Icatu Seguros** | `icatuseguros.com.br`, `icatu.com.br` e `www.icatu.com.br` respondem **HTTP 403** pelo proxy de saída desta sessão, e o Wikimedia Commons não tem SVG da marca (a única ocorrência de "Icatu" lá é o brasão do município de Icatu, MA). | Gabriel baixar o SVG em https://www.icatuseguros.com.br e salvar como `icatu.svg`. |
-| **NotreDame Intermédica** | não há SVG no Commons, e o site da própria marca (`gndi.com.br`) hoje serve o logo da **Hapvida** — as duas se fundiram e o cabeçalho diz "Logo Hapvida SP/RJ". | decidir se a marca ainda merece card próprio; se sim, Gabriel fornecer o arquivo e salvar como `notredame.svg`. |
+
+## Marca removida da lista
+
+**NotreDame Intermédica** tinha card próprio e saiu. A marca foi incorporada pela
+Hapvida, que já aparece aqui, e o site da NotreDame (`gndi.com.br`) hoje serve o
+logo da Hapvida — o `alt` do cabeçalho de lá diz "Logo Hapvida SP/RJ".
 
 _Levantado em 2026-09-16._
