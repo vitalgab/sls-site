@@ -24,7 +24,8 @@ const TEL = '+5571981018556'
 const MODO = process.env.MODO || 'real'
 
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
-  'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo']
+  'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
+  'impostor-gray']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -80,6 +81,16 @@ async function abrir (w, h) {
       let t = await (await r.fetch()).text()
       t = mutar(t, '"Montserrat", "Inter", sans-serif', 'Georgia, serif', 'token --font-display')
       t = mutar(t, 'font-style:normal', 'font-style:italic', 'font-style dos titulos')
+      await r.fulfill({ body: t, contentType: 'text/css' })
+    })
+  }
+  // volta ao estado em que --gray-500 era usado sem nunca ter sido definido.
+  // Apaga a declaracao da folha SERVIDA — empilhar regra por cima nao removeria
+  // nada, e o impostor passaria verde sem ter mordido.
+  if (MODO === 'impostor-gray') {
+    await page.route(/\.css(\?|$)/, async r => {
+      let t = await (await r.fetch()).text()
+      t = mutar(t, '--gray-500:#5e7490;', '', 'declaracao de --gray-500')
       await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
@@ -283,6 +294,41 @@ async function varrerPagina (page) {
   V('manifest.json responde 200', man.status === 200, `status=${man.status}${man.erro ? ' ' + man.erro : ''}`)
   V('manifest.json tem name e 2 icones', man.json?.name === 'Seu Legado Seguro' && man.json?.icons?.length === 2,
     man.json ? `name=${man.json.name} icons=${man.json.icons?.length}` : 'sem JSON')
+
+  // ---- 6b. o "dentre outras..." e a variavel que nao existia ----
+  // --gray-500 era usado em Produtos.jsx e nunca definido no :root: a declaracao
+  // caia como invalida e a cor vinha por heranca, sem erro nenhum. Duas
+  // assercoes, porque uma so nao pega: a existencia da variavel pega o
+  // "undefined", e o contraste pega uma escolha ruim de cor.
+  const cinza = await page.evaluate(() => {
+    const resolver = el => {           // primeiro ancestral com fundo opaco
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor
+        if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c
+      }
+      return 'rgb(255, 255, 255)'
+    }
+    const rgb = s => s.match(/\d+/g).slice(0, 3).map(Number)
+    const lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    const lum = c => { const [r, g, b] = rgb(c); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) }
+    const razao = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
+    return {
+      definida: getComputedStyle(document.documentElement).getPropertyValue('--gray-500').trim(),
+      itens: [...document.querySelectorAll('#produtos p')]
+        .filter(p => p.textContent.trim() === 'dentre outras...')
+        .map(p => {
+          const cor = getComputedStyle(p).color, fundo = resolver(p)
+          return { cor, fundo, contraste: +razao(cor, fundo).toFixed(2) }
+        }),
+    }
+  })
+  V('--gray-500 esta definido no :root', cinza.definida.length > 0, `"${cinza.definida}"`)
+  const sobreBranco = cinza.itens.filter(i => i.fundo === 'rgb(255, 255, 255)')
+  V('os "dentre outras..." de fundo branco usam --gray-500', sobreBranco.length === 3,
+    `${sobreBranco.length} de ${cinza.itens.length}`)
+  V('contraste do "dentre outras..." em fundo branco >= 4.5:1',
+    sobreBranco.length > 0 && sobreBranco.every(i => i.contraste >= 4.5),
+    sobreBranco.map(i => `${i.cor} sobre ${i.fundo} = ${i.contraste}:1`)[0] || 'nenhum')
 
   // ---- 7. contatos ----
   const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp"]')].map(a => a.href))
