@@ -18,7 +18,7 @@
   --shadow-md: 0 6px 28px rgba(0,30,65,0.13);
   --shadow-lg: 0 12px 48px rgba(0,30,65,0.20);
   --font-body: 'Inter', sans-serif;
-  --font-display: 'Cormorant Garamond', serif;
+  --font-display: 'Montserrat', 'Inter', sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -98,10 +98,24 @@ a { text-decoration: none; color: inherit; }
 
 section { padding: 96px 0; }
 
+/* Tipografia de display da marca: Montserrat, peso leve, sem inclinacao. */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   color: var(--navy);
   line-height: 1.15;
+}
+h1, h2, h3 {
+  font-weight: 300;
+  font-style: normal;
+  letter-spacing: -0.015em;
+}
+h4 { font-style: normal; }
+
+/* Destaque dentro de titulo segue o peso do logo */
+h1 em, h2 em, h3 em,
+h1 strong, h2 strong, h3 strong {
+  font-style: normal;
+  font-weight: 700;
 }
 
 .section-eyebrow,
@@ -119,12 +133,12 @@ h1, h2, h3, h4 {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: clamp(28px, 3.5vw, 44px);
-  font-weight: 600;
+  font-size: clamp(26px, 3.2vw, 40px);
+  font-weight: 300;
   color: var(--navy);
   margin-bottom: 16px;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
 .section-sub {

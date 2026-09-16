@@ -42,7 +42,7 @@ function FormularioCotacao() {
       <div style={{ marginBottom: 8 }}>
         <h3 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 22, fontWeight: 600, color: 'var(--navy)',
+          fontSize: 22, fontWeight: 400, color: 'var(--navy)',
           lineHeight: 1.2, marginBottom: 6,
         }}>
           Solicite uma cotação grátis
@@ -159,15 +159,15 @@ export default function Hero() {
         <div>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(42px, 5.5vw, 70px)',
-            fontWeight: 600,
+            fontSize: 'clamp(34px, 5vw, 62px)',
+            fontWeight: 300,
             color: '#ffffff',
             lineHeight: 1.1,
             letterSpacing: '-0.02em',
             marginBottom: 24,
           }}>
             Proteja o que<br />
-            <em style={{ fontStyle: 'italic', fontWeight: 400 }}>você construiu.</em>
+            <em style={{ fontStyle: 'normal', fontWeight: 700 }}>você construiu.</em>
           </h1>
 
           <p style={{

@@ -90,7 +90,7 @@ export default function ParaQuem() {
               <div style={{ padding: '14px 28px 32px' }}>
                 <h3 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 21, fontWeight: 600, color: 'var(--navy)',
+                  fontSize: 21, fontWeight: 400, color: 'var(--navy)',
                   marginBottom: 10, lineHeight: 1.25,
                 }}>{p.title}</h3>
                 <p style={{ color: 'var(--gray-600)', lineHeight: 1.75, fontSize: 14 }}>{p.desc}</p>

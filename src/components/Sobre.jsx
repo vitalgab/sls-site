@@ -67,15 +67,15 @@ export default function Sobre() {
             <p style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(22px, 3vw, 40px)',
-              fontStyle: 'italic',
-              fontWeight: 400,
+              fontStyle: 'normal',
+              fontWeight: 300,
               color: '#fff',
               lineHeight: 1.35,
               textShadow: '0 2px 24px rgba(0,0,0,0.6)',
               marginBottom: 20,
             }}>
               {'"Especialistas em proteger '}
-              <em style={{ fontWeight: 600, fontStyle: 'normal' }}>famílias, carreiras e legados</em>
+              <em style={{ fontWeight: 700, fontStyle: 'normal' }}>famílias, carreiras e legados</em>
               {'."'}
             </p>
             <span style={{
@@ -147,11 +147,11 @@ export default function Sobre() {
                 <polygon points="160,80 140,115 180,115" fill="url(#grad-navy)" />
                 <polygon points="100,200 120,200 140,230 80,230" fill="url(#grad-gold)" />
                 <polygon points="220,200 200,200 180,230 240,230" fill="url(#grad-steel)" />
-                <text x="160" y="24" textAnchor="middle" fill="#003A70" fontFamily="'Cormorant Garamond',Georgia,serif" fontWeight="600" fontSize="14" letterSpacing="1">CONFIANÇA</text>
-                <text x="36" y="240" textAnchor="middle" fill="#C9A84C" fontFamily="'Cormorant Garamond',Georgia,serif" fontWeight="600" fontSize="14" letterSpacing="1">LONGO</text>
-                <text x="36" y="256" textAnchor="middle" fill="#C9A84C" fontFamily="'Cormorant Garamond',Georgia,serif" fontWeight="600" fontSize="14" letterSpacing="1">PRAZO</text>
-                <text x="284" y="240" textAnchor="middle" fill="#4B6A8A" fontFamily="'Cormorant Garamond',Georgia,serif" fontWeight="600" fontSize="14" letterSpacing="1">FOCO NO</text>
-                <text x="284" y="256" textAnchor="middle" fill="#4B6A8A" fontFamily="'Cormorant Garamond',Georgia,serif" fontWeight="600" fontSize="14" letterSpacing="1">CLIENTE</text>
+                <text x="160" y="24" textAnchor="middle" fill="#003A70" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">CONFIANÇA</text>
+                <text x="36" y="240" textAnchor="middle" fill="#C9A84C" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">LONGO</text>
+                <text x="36" y="256" textAnchor="middle" fill="#C9A84C" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">PRAZO</text>
+                <text x="284" y="240" textAnchor="middle" fill="#4B6A8A" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">FOCO NO</text>
+                <text x="284" y="256" textAnchor="middle" fill="#4B6A8A" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">CLIENTE</text>
               </svg>
             </div>
 
@@ -159,8 +159,8 @@ export default function Sobre() {
               <blockquote style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 20,
-                fontStyle: 'italic',
-                fontWeight: 400,
+                fontStyle: 'normal',
+                fontWeight: 300,
                 color: 'var(--navy)',
                 lineHeight: 1.6,
                 borderLeft: 'none',

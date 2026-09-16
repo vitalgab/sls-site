@@ -24,11 +24,11 @@ export default function Contato() {
           }}>Próximo passo</span>
           <h2 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(28px, 4vw, 46px)',
-            fontWeight: 600,
+            fontSize: 'clamp(26px, 3.6vw, 42px)',
+            fontWeight: 300,
             color: 'var(--white)',
             marginBottom: 18,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.015em',
           }}>
             Pronto para proteger o seu legado?
           </h2>

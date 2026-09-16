@@ -113,7 +113,7 @@ export default function Produtos() {
 
               <h3 style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 21, fontWeight: 600,
+                fontSize: 21, fontWeight: 400,
                 color: p.featured ? '#fff' : 'var(--navy)',
                 marginBottom: 8,
               }}>
