@@ -1,4 +1,6 @@
-const FAIXA_IMG = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1440&q=80&fit=crop&auto=format'
+// Servida do proprio site, nao de CDN de terceiro: a foto de fundo nao pode
+// depender de um host que sai do ar. Procedencia em public/assets/FONTES.md.
+const FAIXA_IMG = `${import.meta.env.BASE_URL}assets/faixa-familia.webp`
 
 const pilares = [
   { n: '01', label: 'Confiança', desc: 'Transparência em cada indicação. Você sabe exatamente o que está contratando e por quê.' },
@@ -72,19 +74,11 @@ export default function Sobre() {
               color: '#fff',
               lineHeight: 1.35,
               textShadow: '0 2px 24px rgba(0,0,0,0.6)',
-              marginBottom: 20,
+              margin: 0,
             }}>
-              {'"Especialistas em proteger '}
-              <em style={{ fontWeight: 700, fontStyle: 'normal' }}>famílias, carreiras e legados</em>
-              {'."'}
+              Nosso propósito é cuidar do nosso cliente. Somos especialistas em proteger{' '}
+              <em style={{ fontWeight: 700, fontStyle: 'normal' }}>famílias, carreiras e legados</em>.
             </p>
-            <span style={{
-              fontSize: 13, fontWeight: 600,
-              color: 'rgba(255,255,255,0.65)',
-              letterSpacing: 1, textTransform: 'uppercase',
-            }}>
-              — Missão da Seu Legado Seguro
-            </span>
           </div>
         </div>
       </div>
@@ -211,6 +205,11 @@ export default function Sobre() {
             border-color: var(--navy) !important;
             box-shadow: var(--shadow-md);
             background: var(--white) !important;
+          }
+          /* background-attachment: fixed nao funciona no iOS — o Safari ignora e a
+             foto sai esticada ou borrada. Abaixo de 768px vira scroll. */
+          @media (max-width: 768px) {
+            .faixa-parallax { background-attachment: scroll !important; }
           }
           @media (max-width: 900px) {
             .sobre-top { grid-template-columns: 1fr !important; gap: 36px !important; }

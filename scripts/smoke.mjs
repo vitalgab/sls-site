@@ -25,7 +25,8 @@ const MODO = process.env.MODO || 'real'
 
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
-  'impostor-gray', 'impostor-pwa', 'impostor-azos']
+  'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
+  'impostor-overlay']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -73,6 +74,8 @@ async function abrir (w, h) {
 
   if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
   if (MODO === 'impostor-persona') await page.route(/persona-.*\.(jpg|webp)/, r => r.abort())
+  // derruba a foto da faixa: o fundo some e so sobra o gradiente
+  if (MODO === 'impostor-faixa') await page.route(/faixa-familia\.webp/, r => r.abort())
   // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
   if (MODO === 'impostor-logo') await page.route(/seguradoras\/unimed\.svg/, r => r.abort())
   if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
@@ -115,7 +118,7 @@ async function abrir (w, h) {
       await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
-  if (['impostor-wa', 'impostor-em', 'impostor-missao'].includes(MODO)) {
+  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -124,6 +127,9 @@ async function abrir (w, h) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-overlay') {
+        t = mutar(t, 'linear-gradient(0deg, rgba(0,15,40,0.82) 0%, rgba(0,15,40,0.65) 100%)',
+          'linear-gradient(0deg, rgba(0,15,40,0) 0%, rgba(0,15,40,0) 100%)', 'overlay da faixa')
       } else {
         t = mutar(t, 'fontWeight:700,fontStyle:`normal`', 'fontWeight:400,fontStyle:`italic`', 'destaque da missao')
       }
@@ -145,6 +151,64 @@ async function varrerPagina (page) {
   // As imagens com loading="lazy" so terminam de chegar DEPOIS da rolagem. Com
   // 500 ms as 11 logos ainda mediam naturalWidth 0 e o teste acusaria falso.
   await page.waitForTimeout(1600)
+}
+
+// Contraste do texto branco da faixa contra a FOTO, no ponto mais claro que
+// fica ATRAS de um glifo. Medir o retangulo inteiro do <p> nao serve: ele cobre
+// area onde nao ha letra nenhuma (um bordado colorido na roupa de uma das
+// criancas cai ali) e reprovaria um texto perfeitamente legivel.
+//
+// A mascara do texto sai da DIFERENCA entre o mesmo quadro com e sem o <p>
+// visivel, dilatada 2px para pegar tambem o fundo encostado no glifo. O valor
+// medido e o do quadro SEM texto, senao estariamos lendo o proprio branco.
+async function contrasteDaFaixa (page) {
+  const achou = await page.evaluate(() => {
+    const el = document.querySelector('.faixa-parallax')
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    window.scrollTo(0, Math.max(0, r.top + window.scrollY + r.height / 2 - window.innerHeight / 2))
+    return true
+  })
+  if (!achou) return null
+  await page.waitForTimeout(500)
+  const alvo = page.locator('.faixa-parallax')
+  const com = (await alvo.screenshot()).toString('base64')
+  await page.evaluate(() => { document.querySelector('.faixa-parallax p').style.visibility = 'hidden' })
+  await page.waitForTimeout(200)
+  const sem = (await alvo.screenshot()).toString('base64')
+  await page.evaluate(() => { document.querySelector('.faixa-parallax p').style.visibility = '' })
+
+  return await page.evaluate(async ([a, b]) => {
+    const carregar = async d => { const i = new Image(); await new Promise(r => { i.onload = r; i.src = 'data:image/png;base64,' + d }); return i }
+    const dados = im => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height
+      const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height) }
+    const A = dados(await carregar(a)), B = dados(await carregar(b))
+    const w = A.width, h = A.height
+    const m = new Uint8Array(w * h)
+    let nGlifo = 0
+    for (let i = 0, k = 0; i < A.data.length; i += 4, k++) {
+      const d = Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i + 1] - B.data[i + 1]) + Math.abs(A.data[i + 2] - B.data[i + 2])
+      if (d > 30) { m[k] = 1; nGlifo++ }
+    }
+    const md = new Uint8Array(w * h), R = 2
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!m[y * w + x]) continue
+      for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+        const yy = y + dy, xx = x + dx
+        if (yy >= 0 && yy < h && xx >= 0 && xx < w) md[yy * w + xx] = 1
+      }
+    }
+    const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+    let cor = null, maxL = -1, nMascara = 0
+    for (let k = 0; k < md.length; k++) {
+      if (!md[k]) continue
+      nMascara++
+      const i = k * 4, Rr = B.data[i], G = B.data[i + 1], Bb = B.data[i + 2]
+      const L = 0.2126 * f(Rr) + 0.7152 * f(G) + 0.0722 * f(Bb)
+      if (L > maxL) { maxL = L; cor = [Rr, G, Bb] }
+    }
+    return { cor, nGlifo, nMascara, razao: nGlifo ? 1.05 / (maxL + 0.05) : 0 }
+  }, [com, sem])
 }
 
 // ---------------- DESKTOP ----------------
@@ -230,6 +294,46 @@ async function varrerPagina (page) {
     V('<em> do hero: peso 700, sem inclinacao', destaques.hero.fw === '700' && destaques.hero.fs === 'normal',
       `peso=${destaques.hero.fw} estilo=${destaques.hero.fs}`)
   }
+  // ---- a faixa do proposito ----
+  const faixa = await page.evaluate(async () => {
+    const el = document.querySelector('.faixa-parallax')
+    if (!el) return null
+    const p = el.querySelector('p')
+    const bg = getComputedStyle(el).backgroundImage
+    const url = (bg.match(/url\("?([^")]+)"?\)/) || [])[1]
+    let status = 0, larg = 0
+    if (url) {
+      try { status = (await fetch(url)).status } catch { status = 0 }
+      larg = await new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = url })
+    }
+    return {
+      texto: (p ? p.textContent : '').trim(),
+      url, status, larg,
+      temSpan: !!el.querySelector('span'),
+      anexo: getComputedStyle(el).backgroundAttachment,
+    }
+  })
+  V('faixa do proposito existe', faixa !== null)
+  if (faixa) {
+    V('texto novo da faixa', faixa.texto === 'Nosso propósito é cuidar do nosso cliente. Somos especialistas em proteger famílias, carreiras e legados.',
+      JSON.stringify(faixa.texto.slice(0, 80)))
+    V('o "— Missão da Seu Legado Seguro" saiu', !faixa.temSpan && !faixa.texto.includes('Missão'), faixa.temSpan ? 'ainda ha <span>' : 'sem span')
+    // A foto tem de ser SERVIDA PELO PROPRIO SITE. Antes vinha do Unsplash: um
+    // engasgo de terceiro apagava o fundo da faixa em producao.
+    V('foto da faixa e local (mesmo host)', !!faixa.url && faixa.url.includes('/sls-site/assets/faixa-familia.webp'), `${faixa.url}`)
+    V('foto da faixa responde e decodifica', faixa.status === 200 && faixa.larg > 0, `http=${faixa.status} naturalWidth=${faixa.larg}`)
+
+    // A propriedade travada e o PISO da WCAG AA (4.5:1), nao o numero medido:
+    // congelar "7.63" transformaria qualquer melhora de contraste em vermelho.
+    const ct = await contrasteDaFaixa(page)
+    if (!ct || !ct.nGlifo) {
+      console.error('INSTRUMENTO: mascara do texto da faixa saiu VAZIA')
+      process.exit(3)
+    }
+    V('contraste AA do texto da faixa em 1440px', ct.razao >= 4.5,
+      `${ct.razao.toFixed(2)}:1 sobre rgb(${ct.cor.join(',')}), ${ct.nGlifo}px de glifo`)
+  }
+
   V('<em> da missao existe', destaques.missao !== null, destaques.missao ? `"${destaques.missao.txt}"` : 'ausente')
   if (destaques.missao) {
     V('<em> da missao: peso 700, sem inclinacao', destaques.missao.fw === '700' && destaques.missao.fs === 'normal',
@@ -567,6 +671,16 @@ async function varrerPagina (page) {
   })
   V('bloco da missao cabe na caixa em 390px', missao.larg <= missao.pai + 1,
     `${missao.larg}px em ${missao.pai}px, fontSize=${missao.tam}`)
+
+  // O celular tem background-attachment: scroll, entao o recorte da foto e OUTRO
+  // — 1440 verde nao diz nada sobre 390.
+  const ct390 = await contrasteDaFaixa(page)
+  if (!ct390 || !ct390.nGlifo) {
+    console.error('INSTRUMENTO: mascara do texto da faixa saiu VAZIA em 390px')
+    process.exit(3)
+  }
+  V('contraste AA do texto da faixa em 390px', ct390.razao >= 4.5,
+    `${ct390.razao.toFixed(2)}:1 sobre rgb(${ct390.cor.join(',')}), ${ct390.nGlifo}px de glifo`)
 
   if (SHOTS) {
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })
