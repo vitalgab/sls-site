@@ -1,7 +1,12 @@
 // Logos oficiais em public/seguradoras/. A procedência de cada arquivo está em
 // public/seguradoras/FONTES.md — nenhum foi redesenhado nem gerado.
 //
-// As doze têm logo oficial. Nenhum foi redesenhado nem gerado.
+// Todas têm logo oficial. Nenhum foi redesenhado nem gerado.
+//
+// Omint e Akad Seguros ficaram de fora: os dois domínios respondem HTTP 403 (é
+// o WAF dos próprios sites, não o proxy — os alternativos que respondem são de
+// outra empresa ou só um stub). Melhor uma parceira ausente do que um logo
+// errado ou inventado. Detalhes em FONTES.md.
 //
 // A NotreDame Intermédica saiu da lista: a marca foi incorporada pela Hapvida,
 // que já tem card próprio aqui, e o site da NotreDame hoje serve o logo da
@@ -19,6 +24,12 @@ const parceiras = [
   { nome: 'Zurich', logo: 'seguradoras/zurich.svg' },
   { nome: 'Tokio Marine', logo: 'seguradoras/tokio-marine.svg' },
   { nome: 'Allianz', logo: 'seguradoras/allianz.svg' },
+  { nome: 'Seguros Unimed', logo: 'seguradoras/seguros-unimed.png' },
+  { nome: 'Mapfre', logo: 'seguradoras/mapfre.svg' },
+  { nome: 'Qualicorp', logo: 'seguradoras/qualicorp.png' },
+  { nome: 'Fairfax', logo: 'seguradoras/fairfax.svg' },
+  { nome: 'Coris Seguro Viagem', logo: 'seguradoras/coris.svg' },
+  { nome: 'Ademicon', logo: 'seguradoras/ademicon.svg' },
 ]
 
 function CartaoSeguradora({ p }) {
@@ -80,7 +91,7 @@ export default function Seguradoras() {
             126px não cabem em 350px de área útil — daí a rolagem lateral. */}
         <div className="seguradoras-grid" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: 14,
         }}>
           {parceiras.map(p => <CartaoSeguradora key={p.nome} p={p} />)}

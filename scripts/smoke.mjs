@@ -276,21 +276,31 @@ async function varrerPagina (page) {
       textos: cards.filter(c => !c.querySelector('img')).map(c => c.textContent.trim()),
     }
   })
-  V('12 cartoes de seguradora', seg.cartoes === 12, `${seg.cartoes}`)
-  V('12 logos como <img>', seg.imgs.length === 12, `${seg.imgs.length} imagens`)
+  // Contagem CASADA em vez de numero fixo: o que importa e que todo cartao
+  // tenha imagem. Numero cravado exigiria mexer no teste a cada parceira nova
+  // e, pior, passaria verde se um cartao virasse texto e outro entrasse junto.
+  V('ha cartoes de seguradora', seg.cartoes >= 12, `${seg.cartoes} cartoes`)
+  V('todo cartao tem <img> (N cartoes == N imagens)', seg.cartoes === seg.imgs.length,
+    `${seg.cartoes} cartoes / ${seg.imgs.length} imagens`)
   const semCarregar = seg.imgs.filter(i => !(i.nw > 0))
   V('todos os logos carregaram (naturalWidth > 0)', semCarregar.length === 0,
     semCarregar.length ? JSON.stringify(semCarregar.map(i => i.src)) : seg.imgs.map(i => i.nw).join(','))
   V('todo logo tem alt com o nome da marca', seg.imgs.every(i => i.alt && i.alt.length > 2),
     seg.imgs.map(i => i.alt).join(' · '))
-  V('logos com SVG (nao bitmap)', seg.imgs.every(i => i.src.endsWith('.svg')), `${seg.imgs.length}/${seg.imgs.length}`)
+  // SVG onde existe SVG. Duas marcas so publicam PNG transparente, e sao estas
+  // duas — se outra virar bitmap, ou se um .jpg entrar, isto morde.
+  const PNG_ACEITOS = ['qualicorp.png', 'seguros-unimed.png']
+  const bitmaps = seg.imgs.filter(i => !i.src.endsWith('.svg')).map(i => i.src.split('/').pop())
+  V('formato: SVG, salvo os dois PNG conhecidos',
+    bitmaps.every(b => PNG_ACEITOS.includes(b)) && bitmaps.length <= PNG_ACEITOS.length,
+    `${seg.imgs.length - bitmaps.length} SVG + PNG: ${bitmaps.join(', ') || 'nenhum'}`)
   // altura uniforme: nenhum passa do teto, e nenhum vira fiapo
   const alturas = seg.imgs.map(i => i.alt_alt)
   V('altura dos logos entre 14 e 42 px (teto uniforme)',
     alturas.every(h => h >= 14 && h <= 42), `min=${Math.min(...alturas)} max=${Math.max(...alturas)}`)
   // Nenhum cartao em texto: as doze tem logo. Um card que perca a imagem cai
   // para o ramo de texto e esta assercao morde.
-  V('nenhum cartao em texto — as doze tem logo', seg.textos.length === 0,
+  V('nenhum cartao em texto — todos tem logo', seg.textos.length === 0,
     seg.textos.length ? JSON.stringify(seg.textos) : '0 cartoes em texto')
   V('a Icatu esta entre os logos', seg.imgs.some(i => /icatu/i.test(i.alt)),
     seg.imgs.map(i => i.alt).join(' · '))

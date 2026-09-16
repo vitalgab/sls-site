@@ -19,6 +19,12 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
 | `mag-seguros.svg` | MAG Seguros | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_MAG_Seguros.svg)<br>arquivo: File:Logo MAG Seguros.svg | Public domain |
 | `zurich.svg` | Zurich | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3AZurich_Insurance_Group_logo.svg)<br>arquivo: File:Zurich Insurance Group logo.svg | Public domain |
 | `tokio-marine.svg` | Tokio Marine | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ATokio_Marine_Logo.svg)<br>arquivo: File:Tokio Marine Logo.svg | Public domain |
+| `seguros-unimed.png` | Seguros Unimed | https://midias.segurosunimed.com.br/content/logo.png<br>declarado como `logo` no JSON-LD de segurosunimed.com.br | logo da própria empresa |
+| `mapfre.svg` | Mapfre | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_Mapfre_2026.svg)<br>arquivo: File:Logo Mapfre 2026.svg | Public domain |
+| `qualicorp.png` | Qualicorp | https://www.qualicorp.com.br/wp-content/uploads/2024/10/logoQuali.png<br>não há SVG no site; PNG transparente 263x96 | logo da própria empresa |
+| `fairfax.svg` | Fairfax | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_Fairfax_Financial.svg)<br>arquivo: File:Logo Fairfax Financial.svg | Public domain |
+| `coris.svg` | Coris Seguro Viagem | https://www.coris.com.br/icons/logo-footer.svg | logo da própria empresa |
+| `ademicon.svg` | Ademicon | https://www.ademicon.com.br/api/media/file/ademicon.svg | logo da própria empresa |
 | `allianz.svg` | Allianz | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3AAllianz_logo.svg)<br>arquivo: File:Allianz logo.svg | Public domain |
 
 ## Observações por arquivo
@@ -29,9 +35,31 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
 - **`azos.svg`** usa `fill="currentColor"`, como o site da Azos serve. O componente
   define a cor; em fundo claro o próprio site da Azos usa preto.
 
+- **`coris.svg`** é o arquivo do **rodapé** do site deles, não o do cabeçalho. O
+  do cabeçalho é a versão negativa (texto branco) e sumiria no cartão branco; o
+  do rodapé é a positiva, com `#01192A` e `#00D647`.
+
+- **`seguros-unimed.png`** e **`qualicorp.png`** são PNG porque as duas marcas
+  não publicam SVG. Os dois têm fundo transparente.
+
 - **`tokio-marine.svg`** tem 232 kB porque o traçado do símbolo é detalhado. É servido
   com `loading="lazy"`, então não pesa no primeiro carregamento.
 
+
+## Duas parceiras ficaram de fora, e por quê
+
+Não têm card na seção. **Nenhum logo foi inventado nem substituído por texto**
+para elas — parceira ausente é melhor que marca errada.
+
+| marca | site oficial | o que aconteceu |
+|---|---|---|
+| **Omint** | https://www.omint.com.br/ | responde **HTTP 403** (`Access Denied`, Akamai). O 403 é do WAF do próprio site, **não** do proxy desta sessão. `omint.com.ar` responde 200 mas devolve só um stub de 312 bytes, sem nenhum asset de logo. |
+| **Akad Seguros** | https://www.akadseguros.com.br/ | responde **HTTP 403**, também do WAF do site. Atenção: `akad.com.br` responde 200 e **é outra empresa** — "AKAD \| Plotters, Impressoras de Crachás e Cartões PVC". O logo de lá seria a marca errada. |
+
+Para incluir: abrir o site no navegador, salvar o SVG (ou PNG transparente) do
+cabeçalho como `omint.svg` / `akad.svg` aqui, e acrescentar o card em
+`src/components/Seguradoras.jsx`. O smoke afirma **N cartões == N imagens**,
+então card sem imagem reprova sozinho.
 
 ## Sobre o `icatu.svg`, que veio por outro caminho
 
