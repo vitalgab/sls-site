@@ -466,6 +466,20 @@ async function medirPilares (page) {
   V('a persona CLT esta entre elas', personas.some(p => p.src.includes('persona-clt.webp')),
     personas.map(p => p.src.split('/').pop()).join(', '))
 
+  // Enquadramento igual entre as quatro. Quem garante isso de verdade e o
+  // personas.py, que mede o ROSTO e morre em exit 3 se a foto nova nao ficar na
+  // mesma proporcao das outras. Aqui fica a metade barata e observavel: se uma
+  // delas voltar com outro formato de quadro, ela renderiza em outra escala
+  // dentro do cartao. O quadro do CLT chegou a sair 0,74 contra 1,02 das
+  // outras, e era exatamente isso que aparecia como "pessoa menor".
+  const aspectos = personas.filter(p => p.nh > 0).map(p => p.nw / p.nh)
+  const mediana = [...aspectos].sort((a, b) => a - b)[Math.floor(aspectos.length / 2)]
+  const desalinhadas = personas.filter(p => p.nh > 0 && Math.abs(p.nw / p.nh - mediana) / mediana > 0.05)
+  V('as quatro personas no mesmo formato de quadro (±5%)',
+    aspectos.length === N_PERSONAS && desalinhadas.length === 0,
+    aspectos.map(r => r.toFixed(3)).join(' | ') +
+    (desalinhadas.length ? ` | FORA ${JSON.stringify(desalinhadas.map(p => p.src.split('/').pop()))}` : ''))
+
   // Cartao solto numa ultima linha pela metade e o defeito que esta grade tem de
   // nao ter. A propriedade travada e "o numero de colunas DIVIDE o numero de
   // cartoes", em cada largura — nao um numero de colunas cravado.

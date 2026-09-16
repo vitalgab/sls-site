@@ -76,11 +76,17 @@ TAM_GERADOR_ANTIGO = (1224, 1203)
 # conferi que a reestruturacao deste script nao mudou o resultado delas.
 MAX_LADO = 1224
 
-# `enquadrar` corta o VAZIO das laterais. As tres primeiras ja vinham com a
-# pessoa ocupando a largura toda; na do CLT ela ocupa 68% do quadro, e com
-# object-fit: contain quem manda no tamanho e a LARGURA do cartao — o quadro
-# vazio encolheria a pessoa. Sobra a mesma margem relativa das outras (~3%).
-MARGEM_ENQUADRE = 0.03
+# `enquadrar` iguala o ENQUADRAMENTO ao das outras fotos. A do CLT saiu de outro
+# gerador, de mais longe: a cabeca dela ocupava 33% da largura do quadro contra
+# 35-40% das outras, e com object-fit: contain isso aparece no cartao como uma
+# pessoa menor que as vizinhas.
+#
+# O alvo NAO e numero cravado: sai da media das fotos ja publicadas, medida na
+# mesma execucao. Tres proporcoes precisam bater — largura da cabeca sobre a
+# largura do quadro, proporcao do quadro, e a margem acima da cabeca. Depois de
+# cortar, o script CONFERE as tres e morre em exit 3 se nao baterem, porque
+# enquadramento que so parece certo e o defeito que estamos consertando.
+TOLERANCIA_ENQUADRE = 0.03
 TAM_ESTRELA = 100           # folgado: a estrela mede ~56px
 RAIO_OBRA = 66              # janela reconstruida
 CONTRASTE_MIN_ANTES = 2.0   # abaixo disso a mascara nao esta sobre a marca
@@ -168,6 +174,56 @@ def descontaminar(bgr, alpha):
     return np.where(franja, np.clip(F, 0, 255), C).astype(np.uint8)
 
 
+def metricas_pessoa(rgba):
+    """(topo da cabeca, largura do ROSTO, centro x do rosto), em pixels.
+
+    O tamanho do rosto e o que decide se duas fotos "estao no mesmo
+    enquadramento" — e nao a silhueta. Tentei silhueta primeiro e ela nao serve:
+    a largura da cabeca so se separa dos ombros quando ha um afunilamento no
+    pescoco, e cabelo comprido apaga esse afunilamento. Na foto do CLT o perfil
+    da silhueta cresce sem parar do topo ate os ombros, e o "pico da cabeca"
+    caia a 981px do topo, ja nos ombros.
+
+    Pele por YCrCb resolve: o rosto e a maior regiao de pele da metade de cima.
+    Mede-se a largura MEDIANA no terco superior dessa regiao, que e o rosto sem
+    o pescoco e sem as maos.
+
+    E a medida nao depende do recorte — que e o ponto. A da silhueta dependia:
+    ela usava faixas em % da altura VISIVEL da pessoa, entao mudava de lugar no
+    corpo a cada corte, e o proprio conferidor de enquadre pegou isso.
+    """
+    alpha = rgba[..., 3]
+    op = alpha > 128
+    ys, _ = np.where(op)
+    if ys.size == 0:
+        return None
+    topo = int(ys.min())
+    h, w = alpha.shape
+    a = (alpha[..., None] / 255.0).astype(np.float32)
+    comp = (rgba[..., :3] * a + 128 * (1 - a)).astype(np.uint8)
+    ycc = cv2.cvtColor(comp, cv2.COLOR_BGR2YCrCb)
+    Cr, Cb = ycc[..., 1], ycc[..., 2]
+    pele = ((Cr >= 133) & (Cr <= 175) & (Cb >= 77) & (Cb <= 130) & op).astype(np.uint8)
+    pele = cv2.morphologyEx(pele, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
+    pele = cv2.morphologyEx(pele, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8))
+    n, lab, stats, cent = cv2.connectedComponentsWithStats(pele, 8)
+    cand = [i for i in range(1, n) if cent[i][1] < h * 0.55]
+    if not cand:
+        return None
+    i = max(cand, key=lambda k: stats[k, cv2.CC_STAT_AREA])
+    y0, fh = int(stats[i, cv2.CC_STAT_TOP]), int(stats[i, cv2.CC_STAT_HEIGHT])
+    m = lab == i
+    larg, centros = [], []
+    for y in range(y0, y0 + max(1, int(fh * 0.35))):
+        xs = np.where(m[y])[0]
+        if xs.size:
+            larg.append(int(xs.max() - xs.min() + 1))
+            centros.append((int(xs.max()) + int(xs.min())) / 2.0)
+    if not larg:
+        return None
+    return topo, float(np.median(larg)), float(np.median(centros))
+
+
 def pontos_candidatos(w, h):
     """Onde a estrela pode estar: offset absoluto do gerador antigo e a mesma
     posicao em PROPORCAO, para o caso de a foto ter vindo em outra escala."""
@@ -210,6 +266,7 @@ def main():
     sess = new_session('u2net')
     os.makedirs(DESTINO, exist_ok=True)
     falhou = False
+    referencia = []   # proporcoes das fotos ja publicadas, medidas nesta execucao
     for foto in FOTOS:
         nome, src = foto['nome'], foto['src']
         im = cv2.imread(src)
@@ -255,19 +312,56 @@ def main():
 
         rgba_final = np.dstack([bgr, alpha])
         if foto.get('enquadrar'):
-            xs = np.where((alpha > 128).any(axis=0))[0]
-            if xs.size == 0:
-                print('INSTRUMENTO: %s ficou sem pixel opaco — nada a enquadrar' % nome, file=sys.stderr)
+            if not referencia:
+                print('INSTRUMENTO: nao ha foto de referencia medida antes de %s' % nome, file=sys.stderr)
                 sys.exit(3)
-            m = int(round(MARGEM_ENQUADRE * rgba_final.shape[1]))
-            x0, x1 = max(0, int(xs.min()) - m), min(rgba_final.shape[1], int(xs.max()) + 1 + m)
-            relato += ' | enquadrado x[%d..%d] de %d' % (x0, x1, rgba_final.shape[1])
-            rgba_final = rgba_final[:, x0:x1]
+            m = metricas_pessoa(np.dstack([bgr, alpha]))
+            if m is None:
+                print('INSTRUMENTO: %s ficou sem pessoa para enquadrar' % nome, file=sys.stderr)
+                sys.exit(3)
+            topo, rosto_larg, rosto_cx = m   # nome proprio: cx ja e o da marca d'agua
+            # MEDIANA, nao media: entre as tres referencias o medico destoa
+            # (rosto 0,358 da largura contra 0,272 e 0,278 das outras), e media
+            # de tres com um outlier persegue o outlier.
+            alvo_cab = float(np.median([r['cab'] for r in referencia]))
+            alvo_asp = float(np.median([r['asp'] for r in referencia]))
+            alvo_topo = float(np.median([r['topo'] for r in referencia]))
+            W = rosto_larg / alvo_cab
+            H = W / alvo_asp
+            x0 = int(round(rosto_cx - W / 2)); y0 = int(round(topo - alvo_topo * H))
+            x1 = int(round(x0 + W)); y1 = int(round(y0 + H))
+            H0, W0 = rgba_final.shape[:2]
+            if x0 < 0 or y0 < 0 or x1 > W0 or y1 > H0:
+                print('INSTRUMENTO: o enquadre alvo de %s (%dx%d em x[%d..%d] y[%d..%d]) nao cabe no '
+                      'quadro de %dx%d' % (nome, x1 - x0, y1 - y0, x0, x1, y0, y1, W0, H0), file=sys.stderr)
+                sys.exit(3)
+            rgba_final = rgba_final[y0:y1, x0:x1]
+            relato += ' | enquadrado %dx%d em x[%d..%d] y[%d..%d]' % (x1 - x0, y1 - y0, x0, x1, y0, y1)
         if max(rgba_final.shape[:2]) > MAX_LADO:
             e = MAX_LADO / max(rgba_final.shape[:2])
             rgba_final = cv2.resize(rgba_final, (int(round(rgba_final.shape[1] * e)),
                                                  int(round(rgba_final.shape[0] * e))),
                                     interpolation=cv2.INTER_AREA)
+        # Medidas do quadro FINAL — o que renderiza e ele, nao o intermediario.
+        mf = metricas_pessoa(rgba_final)
+        if mf is None:
+            print('INSTRUMENTO: %s ficou sem pessoa no quadro final' % nome, file=sys.stderr)
+            sys.exit(3)
+        Hf, Wf = rgba_final.shape[:2]
+        prop = {'cab': mf[1] / Wf, 'asp': Wf / Hf, 'topo': mf[0] / Hf}
+        if foto['marca']:
+            referencia.append(prop)
+        else:
+            alvo = {k: float(np.median([r[k] for r in referencia])) for k in prop} if referencia else None
+            if alvo:
+                fora = {k: (prop[k], alvo[k]) for k in prop if abs(prop[k] - alvo[k]) > TOLERANCIA_ENQUADRE}
+                if foto.get('enquadrar') and fora:
+                    print('INSTRUMENTO: %s nao ficou no enquadre das outras: %s (tolerancia %.2f)'
+                          % (nome, ', '.join('%s %.3f vs %.3f' % (k, a_, b_) for k, (a_, b_) in fora.items()),
+                             TOLERANCIA_ENQUADRE), file=sys.stderr)
+                    sys.exit(3)
+        relato += ' | rosto %.3f da largura, quadro %.3f, topo %.3f' % (prop['cab'], prop['asp'], prop['topo'])
+
         saida = os.path.join(DESTINO, nome + '.webp')
         cv2.imwrite(saida, rgba_final, [cv2.IMWRITE_WEBP_QUALITY, 92])
         print('%s %-26s %s | alfa %d%% opaco / %d%% vazio | %d kB'
