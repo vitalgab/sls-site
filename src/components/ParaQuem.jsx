@@ -1,6 +1,6 @@
 const perfis = [
   {
-    photo: 'assets/persona-rc-profissional.jpg',
+    photo: 'assets/persona-rc-profissional.webp',
     photoAlt: 'Profissional liberal',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -12,7 +12,7 @@ const perfis = [
     desc: 'Autônomo não tem rede de proteção corporativa. Sua segurança depende das escolhas que você faz hoje — e nós ajudamos a fazer as escolhas certas.',
   },
   {
-    photo: 'assets/persona-medico.jpg',
+    photo: 'assets/persona-medico.webp',
     photoAlt: 'Médico',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -24,7 +24,7 @@ const perfis = [
     desc: 'Uma carreira construída com anos de estudo merece uma proteção à altura. Coberturas específicas para profissionais da saúde — com plano de saúde e RC médico.',
   },
   {
-    photo: 'assets/persona-advogado.jpg',
+    photo: 'assets/persona-advogado.webp',
     photoAlt: 'Advogado e profissional liberal',
     icon: (
       <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -61,7 +61,13 @@ export default function ParaQuem() {
               boxShadow: 'var(--shadow)',
               transition: 'transform 0.22s, box-shadow 0.22s, border-color 0.22s',
             }}>
-              <div style={{ height: 300, overflow: 'hidden', position: 'relative', background: '#1A5C8B' }}>
+              {/* A foto e PNG/WebP transparente: quem pinta o fundo e este
+                  container, na cor da marca. Antes a cor vinha queimada dentro
+                  do JPG e nao batia com a do cartao — dava a impressao de
+                  imagem colada, com cantos brancos por cima do arredondamento.
+                  O arredondamento agora e do cartao (overflow hidden), nao da
+                  imagem. */}
+              <div style={{ height: 300, overflow: 'hidden', position: 'relative', background: 'var(--navy)' }}>
                 <img
                   src={`${import.meta.env.BASE_URL}${p.photo}`}
                   alt={p.photoAlt}

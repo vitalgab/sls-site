@@ -1,0 +1,6 @@
+# Dependencias do scripts/personas.py (so para reprocessar as fotos; o site nao
+# precisa delas). O modelo u2net (176 MB) e baixado pelo rembg na primeira vez.
+numpy
+opencv-contrib-python-headless
+rembg[cpu]
+onnxruntime
