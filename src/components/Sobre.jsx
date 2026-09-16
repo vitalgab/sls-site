@@ -71,16 +71,17 @@ export default function Sobre() {
           <div style={{ textAlign: 'center', padding: '0 24px', maxWidth: 720 }}>
             <p style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(22px, 3vw, 40px)',
-              fontStyle: 'normal',
+              fontSize: 'clamp(20px, 2.4vw, 32px)',
+              fontStyle: 'italic',
               fontWeight: 300,
               color: '#fff',
               lineHeight: 1.35,
               textShadow: '0 2px 24px rgba(0,0,0,0.6)',
               margin: 0,
             }}>
-              Nosso propósito é cuidar do nosso cliente. Somos especialistas em proteger{' '}
-              <em style={{ fontWeight: 700, fontStyle: 'normal' }}>famílias, carreiras e legados</em>.
+              {'"Nosso propósito é cuidar de você. Somos especialistas em proteger '}
+              <em style={{ fontWeight: 600, fontStyle: 'italic' }}>famílias, carreiras e legados</em>
+              {'."'}
             </p>
           </div>
         </div>

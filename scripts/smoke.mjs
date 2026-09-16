@@ -26,7 +26,7 @@ const MODO = process.env.MODO || 'real'
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
-  'impostor-overlay', 'impostor-pilares', 'impostor-grade',
+  'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -77,6 +77,29 @@ async function abrir (w, h) {
   await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
 
   if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
+  // Tira o eixo ITALICO do pedido ao Google Fonts. A face italica de verdade
+  // nunca chega, o navegador SINTETIZA uma inclinacao por cisalhamento da
+  // romana — e inclinacao sintetizada tem exatamente as MESMAS larguras de
+  // avanco da romana. E assim que a assercao abaixo separa uma da outra.
+  if (MODO === 'impostor-ital') {
+    await page.route(/fonts\.googleapis\.com\/css2/, async r => {
+      const u = new URL(r.request().url())
+      const fam = u.searchParams.getAll('family')
+      if (!fam.some(f => f.includes('ital'))) {
+        console.error('INSTRUMENTO: mutacao "eixo italico" nao achou alvo no pedido de fonte')
+        process.exit(3)
+      }
+      u.searchParams.delete('family')
+      for (const f of fam) {
+        u.searchParams.append('family', f.includes('ital')
+          ? f.replace(/ital,wght@[^&]*/, 'wght@300;400;600;700')
+          : f)
+      }
+      console.error(`  [${MODO}] pedido de fonte sem eixo italico: ${u.search}`)
+      const resp = await r.fetch({ url: u.toString() })
+      await r.fulfill({ response: resp })
+    })
+  }
   if (MODO === 'impostor-persona') await page.route(/persona-.*\.(jpg|webp)/, r => r.abort())
   // derruba a foto da faixa: o fundo some e so sobra o gradiente
   if (MODO === 'impostor-faixa') await page.route(/faixa-familia\.webp/, r => r.abort())
@@ -162,7 +185,7 @@ async function abrir (w, h) {
         t = mutar(t, 'linear-gradient(0deg, rgba(0,15,40,0.82) 0%, rgba(0,15,40,0.65) 100%)',
           'linear-gradient(0deg, rgba(0,15,40,0) 0%, rgba(0,15,40,0) 100%)', 'overlay da faixa')
       } else {
-        t = mutar(t, 'fontWeight:700,fontStyle:`normal`', 'fontWeight:400,fontStyle:`italic`', 'destaque da missao')
+        t = mutar(t, 'fontWeight:600,fontStyle:`italic`', 'fontWeight:400,fontStyle:`normal`', 'destaque da missao')
       }
       await r.fulfill({ body: t, contentType: 'text/javascript' })
     })
@@ -336,13 +359,23 @@ async function medirPilares (page) {
   // rotulos de coluna em var(--font-body) (Inter), como no que esta no ar.
   const tit = await page.evaluate(() => [...document.querySelectorAll('h1, h2, h3, blockquote, .faixa-parallax p, #sobre h4')].map(el => {
     const cs = getComputedStyle(el)
-    return { tag: el.tagName.toLowerCase(), txt: (el.textContent || '').trim().slice(0, 34), ff: cs.fontFamily, fs: cs.fontStyle, fw: cs.fontWeight }
+    return { tag: el.tagName.toLowerCase(), txt: (el.textContent || '').trim().slice(0, 34), ff: cs.fontFamily, fs: cs.fontStyle, fw: cs.fontWeight,
+      faixa: !!el.closest('.faixa-parallax') }
   }))
   V('titulos/citacao/missao presentes no DOM', tit.length >= 20, `${tit.length} elementos`)
   const foraFam = tit.filter(t => !/^["']?Montserrat/i.test(t.ff.trim()))
-  const foraEst = tit.filter(t => t.fs !== 'normal')
   V('fontFamily comeca com Montserrat', foraFam.length === 0, foraFam.length ? JSON.stringify(foraFam.slice(0, 2)) : `${tit.length}/${tit.length}`)
-  V('fontStyle normal', foraEst.length === 0, foraEst.length ? JSON.stringify(foraEst.slice(0, 2)) : `${tit.length}/${tit.length}`)
+
+  // A frase do proposito e a UNICA inclinada entre os titulos, e isso se afirma
+  // nos DOIS sentidos: ela italica, e todo o resto normal. So a segunda metade
+  // deixaria passar a frase voltando a ficar reta sem ninguem perceber.
+  const inclinados = tit.filter(t => t.fs !== 'normal')
+  const faixaInclinada = inclinados.filter(t => t.faixa)
+  const outrosInclinados = inclinados.filter(t => !t.faixa)
+  V('a frase do proposito e italica', faixaInclinada.length === 1,
+    `${faixaInclinada.length} elemento(s) da faixa inclinado(s)`)
+  V('fontStyle normal em todo o resto', outrosInclinados.length === 0,
+    outrosInclinados.length ? JSON.stringify(outrosInclinados.slice(0, 2)) : `${tit.length - 1}/${tit.length - 1}`)
 
   // ---- 3. varredura: nenhuma fonte serifada renderizada, SVG do monograma incluso ----
   const sweep = await page.evaluate(() => {
@@ -421,7 +454,7 @@ async function medirPilares (page) {
   })
   V('faixa do proposito existe', faixa !== null)
   if (faixa) {
-    V('texto novo da faixa', faixa.texto === 'Nosso propósito é cuidar do nosso cliente. Somos especialistas em proteger famílias, carreiras e legados.',
+    V('texto novo da faixa', faixa.texto === '"Nosso propósito é cuidar de você. Somos especialistas em proteger famílias, carreiras e legados."',
       JSON.stringify(faixa.texto.slice(0, 80)))
     V('o "— Missão da Seu Legado Seguro" saiu', !faixa.temSpan && !faixa.texto.includes('Missão'), faixa.temSpan ? 'ainda ha <span>' : 'sem span')
     // A foto tem de ser SERVIDA PELO PROPRIO SITE. Antes vinha do Unsplash: um
@@ -442,17 +475,54 @@ async function medirPilares (page) {
 
   V('<em> da missao existe', destaques.missao !== null, destaques.missao ? `"${destaques.missao.txt}"` : 'ausente')
   if (destaques.missao) {
-    V('<em> da missao: peso 700, sem inclinacao', destaques.missao.fw === '700' && destaques.missao.fs === 'normal',
+    V('<em> da missao: peso 600, italico', destaques.missao.fw === '600' && destaques.missao.fs === 'italic',
       `peso=${destaques.missao.fw} estilo=${destaques.missao.fs}`)
   }
+
+  // ITALICO DE VERDADE, nao inclinacao sintetizada. Quando a face italica nao
+  // chega, o navegador cisalha a romana e o texto FICA inclinado do mesmo
+  // jeito — computed style diz "italic" nos dois casos, entao perguntar o
+  // estilo e vacuo. O que separa e a LARGURA DE AVANCO: a face italica da
+  // Montserrat tem metricas proprias, o cisalhamento reaproveita as da romana.
+  const ital = await page.evaluate(async () => {
+    const amostra = 'famílias, carreiras e legados'
+    await document.fonts.load('300 40px Montserrat')
+    await document.fonts.load('italic 300 40px Montserrat')
+    const medir = estilo => {
+      const el = document.createElement('span')
+      el.textContent = amostra
+      el.style.cssText = `position:absolute;left:-9999px;top:0;white-space:nowrap;font:${estilo} 300 40px Montserrat`
+      document.body.appendChild(el)
+      const w = el.getBoundingClientRect().width
+      el.remove()
+      return w
+    }
+    return { reta: medir('normal'), inclinada: medir('italic') }
+  })
+  V('a face italica da Montserrat carregou (nao e inclinacao sintetizada)',
+    ital.reta > 0 && Math.abs(ital.inclinada - ital.reta) > 0.5,
+    `reta ${ital.reta.toFixed(1)}px, italica ${ital.inclinada.toFixed(1)}px, diferenca ${(ital.inclinada - ital.reta).toFixed(1)}px`)
+
+  // O tamanho da frase caiu: clamp(20px, 2.4vw, 32px). O que se trava sao os
+  // LIMITES do clamp, nao o numero medido numa largura — e em 1440 o teto de
+  // 32px e que manda, porque 2.4vw daria 34,6.
+  const tamFaixa = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.faixa-parallax p')).fontSize))
+  V('frase do proposito dentro do clamp 20-32px em 1440px', tamFaixa >= 20 && tamFaixa <= 32, `${tamFaixa}px`)
 
   // ---- 5. o unico italico que fica e o "dentre outras..." (Inter) ----
   const italicos = await page.evaluate(() => [...document.querySelectorAll('*')]
     .filter(el => getComputedStyle(el).fontStyle === 'italic')
-    .map(el => ({ txt: (el.textContent || '').trim().slice(0, 30), ff: getComputedStyle(el).fontFamily })))
-  V('todo italico remanescente e "dentre outras..." em Inter',
-    italicos.length > 0 && italicos.every(i => i.txt === 'dentre outras...' && /^["']?Inter/.test(i.ff)),
-    `${italicos.length} elementos italicos: ${JSON.stringify([...new Set(italicos.map(i => i.txt))])}`)
+    .map(el => ({ txt: (el.textContent || '').trim().slice(0, 30), ff: getComputedStyle(el).fontFamily,
+      faixa: !!el.closest('.faixa-parallax') })))
+  // Duas familias de italico sao permitidas, e so duas: o "dentre outras..." em
+  // Inter, que ja existia, e a frase do proposito em Montserrat.
+  const foraDaRegra = italicos.filter(i =>
+    !(i.txt === 'dentre outras...' && /^["']?Inter/.test(i.ff)) &&
+    !(i.faixa && /^["']?Montserrat/.test(i.ff)))
+  V('italico so no "dentre outras..." (Inter) e na frase do proposito (Montserrat)',
+    italicos.length > 0 && foraDaRegra.length === 0,
+    `${italicos.length} italicos: ${JSON.stringify([...new Set(italicos.map(i => i.txt))])}` +
+    (foraDaRegra.length ? ` | FORA DA REGRA ${JSON.stringify(foraDaRegra.slice(0, 2))}` : ''))
 
   // ---- 6. personas e PWA ----
   const personas = await page.evaluate(() => [...document.querySelectorAll('img[src*="persona-"]')]
