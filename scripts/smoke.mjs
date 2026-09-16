@@ -25,7 +25,7 @@ const MODO = process.env.MODO || 'real'
 
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
-  'impostor-gray']
+  'impostor-gray', 'impostor-pwa']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -76,6 +76,18 @@ async function abrir (w, h) {
   // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
   if (MODO === 'impostor-logo') await page.route(/seguradoras\/unimed\.svg/, r => r.abort())
   if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
+  // volta ao estado anterior: manifest e icones publicados, mas o index.html sem
+  // anuncia-los. O impostor-manifest derruba o ARQUIVO; este derruba o ANUNCIO,
+  // que e coisa diferente e precisava da propria prova.
+  if (MODO === 'impostor-pwa') {
+    await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
+      let t = await (await r.fetch()).text()
+      t = mutar(t, '<link rel="apple-touch-icon" href="/sls-site/icons/apple-touch-icon.png" />', '', 'link apple-touch-icon')
+      t = mutar(t, '<link rel="manifest" href="/sls-site/manifest.json" />', '', 'link manifest')
+      t = mutar(t, '<meta name="theme-color" content="#003A70" />', '', 'meta theme-color')
+      await r.fulfill({ body: t, contentType: 'text/html' })
+    })
+  }
   if (MODO === 'impostor-css') {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
@@ -294,6 +306,29 @@ async function varrerPagina (page) {
   V('manifest.json responde 200', man.status === 200, `status=${man.status}${man.erro ? ' ' + man.erro : ''}`)
   V('manifest.json tem name e 2 icones', man.json?.name === 'Seu Legado Seguro' && man.json?.icons?.length === 2,
     man.json ? `name=${man.json.name} icons=${man.json.icons?.length}` : 'sem JSON')
+
+  // O arquivo responder 200 nao prova que o navegador sabe dele: o manifest e os
+  // icones eram publicados ha tempos e o index.html nunca os anunciava. Aqui se
+  // afirma o ANUNCIO, no DOM, e que o href realmente resolve.
+  const pwa = await page.evaluate(async () => {
+    const ler = sel => document.querySelector(sel)
+    const m = ler('link[rel="manifest"]')
+    const t = ler('link[rel="apple-touch-icon"]')
+    const c = ler('meta[name="theme-color"]')
+    const carrega = src => new Promise(res => {
+      const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = src
+    })
+    return {
+      manifest: m ? m.href : null,
+      appleTouch: t ? t.href : null,
+      appleTouchLarg: t ? await carrega(t.href) : 0,
+      themeColor: c ? c.getAttribute('content') : null,
+    }
+  })
+  V('<link rel="manifest"> anunciado no DOM', !!pwa.manifest && pwa.manifest.endsWith('/sls-site/manifest.json'), `${pwa.manifest}`)
+  V('<link rel="apple-touch-icon"> anunciado e carrega', pwa.appleTouchLarg > 0,
+    `${pwa.appleTouch} -> ${pwa.appleTouchLarg}px`)
+  V('<meta name="theme-color"> com o navy da marca', pwa.themeColor === '#003A70', `${pwa.themeColor}`)
 
   // ---- 6b. o "dentre outras..." e a variavel que nao existia ----
   // --gray-500 era usado em Produtos.jsx e nunca definido no :root: a declaracao
