@@ -39,6 +39,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # o passo "A suíte mudou?" compara com o commit anterior do push, que
+          # pode estar vários commits atrás — clone raso não alcança.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
@@ -75,6 +79,42 @@ jobs:
       - name: Smoke
         run: node scripts/smoke.mjs
 
+      # Os impostores custam ~11 min dos ~17 do deploy, e só dizem algo quando a
+      # SUÍTE muda: eles medem se o smoke sabe reprovar, não se o site está bom.
+      # Mudança só de conteúdo (um texto, uma foto, uma cor) não muda a resposta
+      # deles — o smoke real, que roda sempre, é quem pega isso.
+      #
+      # Sem base de comparação (branch nova, force-push, histórico raso) ou em
+      # execução manual, RODA. Guardião rodando à toa custa tempo; guardião que
+      # não rodou quando devia custa um deploy errado.
+      - name: A suíte mudou?
+        id: mudou
+        run: |
+          antes='${{ github.event.before }}'
+          zeros='0000000000000000000000000000000000000000'
+          if [ "${{ github.event_name }}" != 'push' ]; then
+            echo "rodar=sim" >> "$GITHUB_OUTPUT"
+            echo "motivo=execução manual" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$antes" ] || [ "$antes" = "$zeros" ] || ! git cat-file -e "$antes^{commit}" 2>/dev/null; then
+            echo "rodar=sim" >> "$GITHUB_OUTPUT"
+            echo "motivo=sem base de comparação ($antes)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          arquivos=$(git diff --name-only "$antes" "$GITHUB_SHA")
+          echo "arquivos no push:"; echo "$arquivos" | sed 's/^/  /'
+          if printf '%s\n' "$arquivos" | grep -qE '^(scripts/|\.github/|package\.json$|package-lock\.json$)'; then
+            echo "rodar=sim" >> "$GITHUB_OUTPUT"
+            echo "motivo=a suíte ou o ambiente mudaram" >> "$GITHUB_OUTPUT"
+          else
+            echo "rodar=nao" >> "$GITHUB_OUTPUT"
+            echo "motivo=nada de scripts/, .github/ ou package.json no diff" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Por que os impostores vão (ou não) rodar
+        run: echo "rodar=${{ steps.mudou.outputs.rodar }} — ${{ steps.mudou.outputs.motivo }}"
+
       # A fonte do runner nao renderiza igual a de nenhuma outra maquina, e foi
       # por 2px de diferenca que um deploy caiu. Este passo alarga o tracking dos
       # rotulos em 1px e exige que a suite continue VERDE — robustez, nao
@@ -87,6 +127,7 @@ jobs:
       # o artefato SERVIDO (folha de estilo ou bundle) e tem de derrubar o
       # smoke. Se algum passar verde, o deploy para aqui.
       - name: Os impostores têm de morder
+        if: steps.mudou.outputs.rodar == 'sim'
         run: |
           falhou=0
           for m in impostor-css impostor-rede impostor-wa impostor-em \
