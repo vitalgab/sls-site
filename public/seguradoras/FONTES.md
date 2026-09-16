@@ -15,6 +15,7 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
 | `unimed.svg` | Unimed | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogotipo_da_Unimed_%282022%29.svg)<br>arquivo: File:Logotipo da Unimed (2022).svg | Public domain |
 | `hapvida.svg` | Hapvida | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogotipo_da_Hapvida.svg)<br>arquivo: File:Logotipo da Hapvida.svg | Public domain |
 | `azos.svg` | Azos | wordmark do cabeçalho de https://azos.com.br/ (SVG embutido na página, `viewBox 0 0 100 20`) | logo da própria empresa |
+| `icatu.svg` | Icatu Seguros | https://portal.icatuseguros.com.br/assets/icons/logo_icatuseguros_horizontal.svg<br>o domínio é bloqueado pelo proxy desta sessão, então o arquivo foi extraído no navegador do Gabriel | logo da própria empresa |
 | `mag-seguros.svg` | MAG Seguros | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_MAG_Seguros.svg)<br>arquivo: File:Logo MAG Seguros.svg | Public domain |
 | `zurich.svg` | Zurich | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3AZurich_Insurance_Group_logo.svg)<br>arquivo: File:Zurich Insurance Group logo.svg | Public domain |
 | `tokio-marine.svg` | Tokio Marine | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ATokio_Marine_Logo.svg)<br>arquivo: File:Tokio Marine Logo.svg | Public domain |
@@ -32,14 +33,29 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
   com `loading="lazy"`, então não pesa no primeiro carregamento.
 
 
-## Falta um, e o motivo
+## Sobre o `icatu.svg`, que veio por outro caminho
 
-Este continua como **texto** em `src/components/Seguradoras.jsx`, não como imagem.
-Nenhum logo foi inventado para ele.
+O domínio da Icatu responde **HTTP 403** pelo proxy de saída, e o Wikimedia
+Commons não tem SVG da marca — a única ocorrência de "Icatu" lá é o brasão do
+município de Icatu, MA. O arquivo foi então extraído do original no navegador do
+Gabriel e transportado pelo chat.
 
-| marca | o que aconteceu | o que resolve |
-|---|---|---|
-| **Icatu Seguros** | `icatuseguros.com.br`, `icatu.com.br` e `www.icatu.com.br` respondem **HTTP 403** pelo proxy de saída desta sessão, e o Wikimedia Commons não tem SVG da marca (a única ocorrência de "Icatu" lá é o brasão do município de Icatu, MA). | Gabriel baixar o SVG em https://www.icatuseguros.com.br e salvar como `icatu.svg`. |
+Transporte por chat corrompe, e corrompeu: **cinco números chegaram com um zero
+a mais** à direita. O conteúdo foi conferido por **SHA-256** dos atributos `d`
+de todos os `<path>`, na ordem, unidos por `|`:
+
+```
+192c2a5f9f3d5ed3e21ea61b4a7e4fb9b3d8dd8fc8e22d1cbefb40c693b611d5
+```
+
+O hash do original certifica o arquivo que está aqui. Para reconferir:
+
+```bash
+python3 -c "
+import re,hashlib
+s=open('public/seguradoras/icatu.svg').read()
+print(hashlib.sha256('|'.join(re.findall(r'<path\b[^>]*?\bd=\"([^\"]*)\"',s)).encode()).hexdigest())"
+```
 
 ## Marca removida da lista
 

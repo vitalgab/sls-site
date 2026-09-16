@@ -1,9 +1,7 @@
 // Logos oficiais em public/seguradoras/. A procedência de cada arquivo está em
 // public/seguradoras/FONTES.md — nenhum foi redesenhado nem gerado.
 //
-// A Icatu segue como TEXTO porque o arquivo oficial ainda não foi obtido: o
-// domínio dela responde 403 pelo proxy desta sessão. Melhor um nome escrito do
-// que um logo inventado.
+// As doze têm logo oficial. Nenhum foi redesenhado nem gerado.
 //
 // A NotreDame Intermédica saiu da lista: a marca foi incorporada pela Hapvida,
 // que já tem card próprio aqui, e o site da NotreDame hoje serve o logo da
@@ -17,7 +15,7 @@ const parceiras = [
   { nome: 'Hapvida', logo: 'seguradoras/hapvida.svg' },
   { nome: 'Azos', logo: 'seguradoras/azos.svg', cor: '#0A0A0A' },
   { nome: 'MAG Seguros', logo: 'seguradoras/mag-seguros.svg' },
-  { nome: 'Icatu Seguros' },
+  { nome: 'Icatu Seguros', logo: 'seguradoras/icatu.svg' },
   { nome: 'Zurich', logo: 'seguradoras/zurich.svg' },
   { nome: 'Tokio Marine', logo: 'seguradoras/tokio-marine.svg' },
   { nome: 'Allianz', logo: 'seguradoras/allianz.svg' },
