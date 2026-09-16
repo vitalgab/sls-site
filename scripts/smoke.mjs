@@ -27,7 +27,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
-  'impostor-cabecalho',
+  'impostor-cabecalho', 'impostor-impar',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -159,7 +159,7 @@ async function abrir (w, h, opcoes = {}) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'estresse'].includes(MODO)) {
+    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'impostor-impar', 'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -168,6 +168,15 @@ async function abrir (w, h, opcoes = {}) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-impar') {
+        // Tira uma parceira: N vai de 18 para 17, IMPAR.
+        //
+        // Repare onde ele NAO morde: em 1440 a assercao continua verde, porque
+        // 17 e primo, colunas(17,6) devolve 1 e uma grade de uma coluna tem toda
+        // linha "cheia" por construcao. Quem pega o caso e o celular, que sao
+        // sempre 2 colunas, e a assercao de paridade. Sem ela, um N impar
+        // passaria em metade das larguras medidas.
+        t = mutar(t, ',{nome:`Ademicon`,logo:`seguradoras/ademicon.svg`}', '', 'uma parceira da lista')
       } else if (MODO === 'impostor-cabecalho') {
         // Largura fixa em cima de altura fixa: a marca estica. "Sem deformar" e
         // uma afirmacao sobre a PROPORCAO, e e so ela que este impostor quebra.
@@ -542,6 +551,37 @@ async function medirLogoCabecalho (page) {
     `renderizado ${logoD.prop.toFixed(3)} vs natural ${logoD.nat.toFixed(3)}`)
   V('logo do cabecalho cabe na barra em 1440px', logoD.transborda === 0, `transborda ${logoD.transborda}px`)
   V('logo do cabecalho nao encosta no menu em 1440px', logoD.folga === null || logoD.folga > 16, `folga ${logoD.folga}px`)
+
+  // ---- 3b3. a grade de seguradoras fecha toda linha ----
+  // Cartao solto na ultima linha e o defeito. A propriedade travada e "o numero
+  // de colunas DIVIDE o numero de cartoes", em cada largura — nunca um numero de
+  // colunas cravado, que precisaria ser reescrito a cada parceira nova.
+  for (const larg of [1440, 1024, 900, 560, 390, 320]) {
+    await page.setViewportSize({ width: larg, height: 900 })
+    await page.waitForTimeout(280)
+    const g = await page.evaluate(() => {
+      const el = document.querySelector('.seguradoras-grid')
+      if (!el) return null
+      el.scrollIntoView({ block: 'center' })
+      const cols = getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length
+      const cards = el.children.length
+      const tops = [...el.children].map(c => Math.round(c.getBoundingClientRect().top))
+      const ultima = Math.max(...tops)
+      return { cols, cards, linhas: new Set(tops).size, naUltima: tops.filter(t => t === ultima).length,
+        rolagem: document.documentElement.scrollWidth <= document.documentElement.clientWidth }
+    })
+    if (!g) { console.error('INSTRUMENTO: .seguradoras-grid nao existe'); process.exit(3) }
+    V(`grade de seguradoras sem cartao solto em ${larg}px`,
+      g.cards % g.cols === 0 && g.naUltima === g.cols,
+      `${g.cards} cartoes em ${g.cols} coluna(s), ${g.linhas} linha(s), ${g.naUltima} na ultima`)
+    V(`sem rolagem lateral na grade de seguradoras em ${larg}px`, g.rolagem === true, g.rolagem ? 'ok' : 'HORIZONTAL')
+  }
+  // No celular sao sempre 2 colunas, entao um numero IMPAR de parceiras deixaria
+  // uma sozinha por construcao — nenhuma escolha de colunas conserta isso.
+  const nParceiras = await page.evaluate(() => document.querySelectorAll('.seguradoras-grid > *').length)
+  V('numero de parceiras e par', nParceiras % 2 === 0, `${nParceiras} parceiras`)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.waitForTimeout(280)
 
   // ---- 3c. as fotos do hero ----
   const fotosHero = await page.evaluate(async () => {

@@ -76,7 +76,20 @@ function CartaoSeguradora({ p }) {
   )
 }
 
+// Quantas colunas cabem SEM deixar cartao solto na ultima linha: o maior
+// divisor de N que nao passa do teto. Com 18 parceiras da 6/3/2; com 20 daria
+// 5/4/2. O numero nao fica cravado em lugar nenhum — ele se recalcula quando a
+// lista muda, que e o unico jeito de a regra sobreviver a proxima parceira.
+function colunas (n, teto) {
+  for (let c = teto; c >= 1; c--) if (n % c === 0) return c
+  return 1
+}
+
 export default function Seguradoras() {
+  const n = parceiras.length
+  const colDesk = colunas(n, 6)
+  const colTab = colunas(n, 4)
+  const colMob = 2   // no celular sao sempre 2, e por isso N precisa ser par
   return (
     <section style={{ background: 'var(--gray-50)', paddingTop: 64, paddingBottom: 64 }}>
       <div className="container">
@@ -89,14 +102,10 @@ export default function Seguradoras() {
           Trabalhamos com as melhores seguradoras do Brasil
         </p>
 
-        {/* auto-fit + minmax deixa o navegador escolher quantas colunas cabem.
-            A versão anterior forçava 3 colunas abaixo de 560px, e 3 cartões de
-            126px não cabem em 350px de área útil — daí a rolagem lateral. */}
-        <div className="seguradoras-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: 14,
-        }}>
+        {/* auto-fit deixava o navegador escolher, e em várias larguras a conta
+            dele deixava 1 ou 2 cartões sozinhos na última linha. Agora o número
+            de colunas vem de N, e toda linha fecha cheia. */}
+        <div className="seguradoras-grid" style={{ display: 'grid', gap: 14 }}>
           {parceiras.map(p => <CartaoSeguradora key={p.nome} p={p} />)}
         </div>
 
@@ -116,8 +125,12 @@ export default function Seguradoras() {
           transform: translateY(-2px);
           filter: grayscale(0%) opacity(1);
         }
-        @media (max-width: 560px) {
-          .seguradoras-grid { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)) !important; }
+        .seguradoras-grid { grid-template-columns: repeat(${colDesk}, 1fr); }
+        @media (max-width: 1023px) {
+          .seguradoras-grid { grid-template-columns: repeat(${colTab}, 1fr); }
+        }
+        @media (max-width: 559px) {
+          .seguradoras-grid { grid-template-columns: repeat(${colMob}, 1fr); }
         }
       `}</style>
     </section>
