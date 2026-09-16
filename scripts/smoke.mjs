@@ -1,0 +1,335 @@
+/**
+ * Smoke dinamico do site institucional.
+ *
+ *   node scripts/smoke.mjs                      # modo real
+ *   MODO=impostor-css node scripts/smoke.mjs    # controle negativo
+ *
+ * Variaveis: SMOKE_URL (padrao http://127.0.0.1:8099/sls-site/), SHOTS_DIR, MODO.
+ *
+ * Codigos de saida:  0 = tudo verde | 1 = alguma assercao vermelha
+ *                    3 = INSTRUMENTO (modo desconhecido ou mutacao sem alvo)
+ *
+ * Todo modo impostor muta o ARTEFATO SERVIDO (a folha real, o bundle real), nunca
+ * empilha estilo por cima: regra que apaga declaracao vira no-op e o impostor
+ * passa verde sem ter mordido. E toda mutacao que nao encontra alvo derruba o
+ * script com exit 3, para "nao mordeu" nunca se confundir com "nao rodou".
+ */
+import { chromium } from 'playwright'
+
+const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/sls-site/'
+const SHOTS = process.env.SHOTS_DIR || null
+const WA = '5571981018556'
+const TEL = '+5571981018556'
+const MODO = process.env.MODO || 'real'
+
+const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
+  'impostor-missao', 'impostor-persona', 'impostor-manifest']
+if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
+
+let ok = 0, bad = 0
+const V = (n, c, d = '') => {
+  if (c) { ok++; console.log(`✓ ${n}${d ? ' — ' + d : ''}`) }
+  else { bad++; console.log(`✗ ${n}${d ? ' — ' + d : ''}`) }
+}
+const mutar = (txt, de, para, rotulo) => {
+  const n = txt.split(de).length - 1
+  if (n === 0) { console.error(`INSTRUMENTO: mutacao "${rotulo}" nao achou alvo`); process.exit(3) }
+  console.error(`  [${MODO}] mutou ${n}x: ${rotulo}`)
+  return txt.split(de).join(para)
+}
+
+const browser = await chromium.launch({
+  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  // confia SOMENTE na CA do proxy desta sessao (SPKI fixado), em vez de desligar TLS
+  args: ['--ignore-certificate-errors-spki-list=KnP1OnzHv/y42eRQmbGwoYTHcSJF448m6CU5mdngwKk=,PS48cX347wDVcRynzq+DFqswl2PLNE1sG6uQvxMCOS0='],
+})
+
+async function abrir (w, h) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
+  const page = await ctx.newPage()
+  await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
+
+  if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
+  if (MODO === 'impostor-persona') await page.route(/persona-.*\.jpg/, r => r.abort())
+  if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
+  if (MODO === 'impostor-css') {
+    await page.route(/\.css(\?|$)/, async r => {
+      let t = await (await r.fetch()).text()
+      t = mutar(t, '"Montserrat", "Inter", sans-serif', 'Georgia, serif', 'token --font-display')
+      t = mutar(t, 'font-style:normal', 'font-style:italic', 'font-style dos titulos')
+      await r.fulfill({ body: t, contentType: 'text/css' })
+    })
+  }
+  if (['impostor-wa', 'impostor-em', 'impostor-missao'].includes(MODO)) {
+    await page.route(/\.js(\?|$)/, async r => {
+      let t = await (await r.fetch()).text()
+      if (MODO === 'impostor-wa') {
+        t = mutar(t, '5571981018556', '5571999999999', 'numero do WhatsApp')
+        t = mutar(t, '(71) 98101-8556', '(71) 9 9999-9999', 'telefone exibido')
+        t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
+      } else if (MODO === 'impostor-em') {
+        t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else {
+        t = mutar(t, 'fontWeight:700,fontStyle:`normal`', 'fontWeight:400,fontStyle:`italic`', 'destaque da missao')
+      }
+      await r.fulfill({ body: t, contentType: 'text/javascript' })
+    })
+  }
+  return { ctx, page }
+}
+
+// percorre a pagina para disparar o loading="lazy" das personas
+async function varrerPagina (page) {
+  await page.evaluate(async () => {
+    const passo = window.innerHeight
+    for (let y = 0; y < document.body.scrollHeight; y += passo) {
+      window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120))
+    }
+    window.scrollTo(0, 0)
+  })
+  await page.waitForTimeout(500)
+}
+
+// ---------------- DESKTOP ----------------
+{
+  const { ctx, page } = await abrir(1440, 1000)
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready.then(() => 0))
+  await varrerPagina(page)
+
+  // ---- 1. a fonte da marca carregou de fato ----
+  // document.fonts.check() devolve TRUE quando a familia nem esta declarada
+  // (nao ha face pendente a reportar): sozinho ele e vacuo — o impostor-rede
+  // prova isso. Quem discrimina e fonts.load(), que devolve ARRAY VAZIO quando
+  // nada casa, e a medicao da largura renderizada.
+  const chk = await page.evaluate(() => ({
+    c3: document.fonts.check('300 16px Montserrat'),
+    c7: document.fonts.check('700 16px Montserrat'),
+  }))
+  V('document.fonts.check 300/700 Montserrat [nao discrimina sozinho]', chk.c3 && chk.c7, JSON.stringify(chk))
+
+  const faces = await page.evaluate(async () => {
+    const l3 = await document.fonts.load('300 16px Montserrat')
+    const l7 = await document.fonts.load('700 16px Montserrat')
+    return { n3: l3.length, n7: l7.length, pesos: [...document.fonts].filter(f => /Montserrat/i.test(f.family) && f.status === 'loaded').map(f => f.weight) }
+  })
+  V('document.fonts.load casa a face Montserrat 300', faces.n3 > 0, `${faces.n3} face(s); pesos carregados: ${faces.pesos.join(',') || 'nenhum'}`)
+  V('document.fonts.load casa a face Montserrat 700', faces.n7 > 0, `${faces.n7} face(s)`)
+
+  const sonda = await page.evaluate(() => {
+    const medir = ff => {
+      const s = document.createElement('span')
+      s.textContent = 'Proteja o que você construiu'
+      s.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:40px;font-weight:300;font-family:${ff}`
+      document.body.appendChild(s); const w = s.getBoundingClientRect().width; s.remove(); return w
+    }
+    return { mont: medir("'Montserrat'"), fake: medir("'NaoExisteEssaFonte123'") }
+  })
+  V('texto renderizado com Montserrat difere do fallback', Math.abs(sonda.mont - sonda.fake) > 2,
+    `Montserrat=${sonda.mont.toFixed(1)}px fallback=${sonda.fake.toFixed(1)}px`)
+
+  // ---- 2. titulos, citacao e bloco da missao ----
+  // Tipografia de DISPLAY. Os <h4> do rodape ficam de fora de proposito: sao
+  // rotulos de coluna em var(--font-body) (Inter), como no que esta no ar.
+  const tit = await page.evaluate(() => [...document.querySelectorAll('h1, h2, h3, blockquote, .faixa-parallax p, #sobre h4')].map(el => {
+    const cs = getComputedStyle(el)
+    return { tag: el.tagName.toLowerCase(), txt: (el.textContent || '').trim().slice(0, 34), ff: cs.fontFamily, fs: cs.fontStyle, fw: cs.fontWeight }
+  }))
+  V('titulos/citacao/missao presentes no DOM', tit.length >= 20, `${tit.length} elementos`)
+  const foraFam = tit.filter(t => !/^["']?Montserrat/i.test(t.ff.trim()))
+  const foraEst = tit.filter(t => t.fs !== 'normal')
+  V('fontFamily comeca com Montserrat', foraFam.length === 0, foraFam.length ? JSON.stringify(foraFam.slice(0, 2)) : `${tit.length}/${tit.length}`)
+  V('fontStyle normal', foraEst.length === 0, foraEst.length ? JSON.stringify(foraEst.slice(0, 2)) : `${tit.length}/${tit.length}`)
+
+  // ---- 3. varredura: nenhuma fonte serifada renderizada, SVG do monograma incluso ----
+  const sweep = await page.evaluate(() => {
+    const alvos = [document.body, ...document.body.querySelectorAll('*')]
+      .filter(el => !['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'].includes(el.tagName))
+    const ruins = []
+    for (const el of alvos) {
+      const ff = getComputedStyle(el).fontFamily
+      if (/serif|cormorant|georgia|times/i.test(ff.replace(/sans-serif/gi, ''))) {
+        ruins.push({ tag: el.tagName.toLowerCase(), ff, txt: (el.textContent || '').trim().slice(0, 26) })
+      }
+    }
+    const svgTexts = document.querySelectorAll('#sobre svg text').length
+    return { varridos: alvos.length, ruins, svgTexts }
+  })
+  V('varredura cobriu a arvore', sweep.varridos > 300, `${sweep.varridos} elementos`)
+  V('varredura alcancou os rotulos do monograma (SVG)', sweep.svgTexts >= 5, `${sweep.svgTexts} <text> em #sobre`)
+  V('zero elementos com fonte serifada', sweep.ruins.length === 0, sweep.ruins.length ? JSON.stringify(sweep.ruins.slice(0, 3)) : `0 de ${sweep.varridos}`)
+
+  // ---- 4. destaques no peso do logo ----
+  const destaques = await page.evaluate(() => {
+    const ler = sel => {
+      const el = document.querySelector(sel); if (!el) return null
+      const cs = getComputedStyle(el)
+      return { txt: el.textContent, fw: cs.fontWeight, fs: cs.fontStyle, ff: cs.fontFamily }
+    }
+    return { hero: ler('#inicio h1 em'), missao: ler('.faixa-parallax em') }
+  })
+  V('<em> do hero existe', destaques.hero !== null, destaques.hero ? `"${destaques.hero.txt}"` : 'ausente')
+  if (destaques.hero) {
+    V('<em> do hero: peso 700, sem inclinacao', destaques.hero.fw === '700' && destaques.hero.fs === 'normal',
+      `peso=${destaques.hero.fw} estilo=${destaques.hero.fs}`)
+  }
+  V('<em> da missao existe', destaques.missao !== null, destaques.missao ? `"${destaques.missao.txt}"` : 'ausente')
+  if (destaques.missao) {
+    V('<em> da missao: peso 700, sem inclinacao', destaques.missao.fw === '700' && destaques.missao.fs === 'normal',
+      `peso=${destaques.missao.fw} estilo=${destaques.missao.fs}`)
+  }
+
+  // ---- 5. o unico italico que fica e o "dentre outras..." (Inter) ----
+  const italicos = await page.evaluate(() => [...document.querySelectorAll('*')]
+    .filter(el => getComputedStyle(el).fontStyle === 'italic')
+    .map(el => ({ txt: (el.textContent || '').trim().slice(0, 30), ff: getComputedStyle(el).fontFamily })))
+  V('todo italico remanescente e "dentre outras..." em Inter',
+    italicos.length > 0 && italicos.every(i => i.txt === 'dentre outras...' && /^["']?Inter/.test(i.ff)),
+    `${italicos.length} elementos italicos: ${JSON.stringify([...new Set(italicos.map(i => i.txt))])}`)
+
+  // ---- 6. personas e PWA ----
+  const personas = await page.evaluate(() => [...document.querySelectorAll('img[src*="persona-"]')]
+    .map(i => ({ src: i.getAttribute('src'), nw: i.naturalWidth, nh: i.naturalHeight })))
+  V('tres personas no DOM', personas.length === 3, `${personas.length}: ${personas.map(p => p.src.split('/').pop()).join(', ')}`)
+  V('as tres personas carregaram (naturalWidth > 0)', personas.length === 3 && personas.every(p => p.nw > 0),
+    personas.map(p => `${p.nw}x${p.nh}`).join(' | '))
+
+  // O fetch tem de sair DE DENTRO da pagina: page.request nao passa por
+  // page.route(), entao um impostor que derruba o manifest nao alcancaria a
+  // medicao e o verde seria inalcancavel por qualquer falha real.
+  const man = await page.evaluate(async url => {
+    try {
+      const r = await fetch(url)
+      let j = null
+      try { j = await r.json() } catch { /* corpo nao e JSON */ }
+      return { status: r.status, json: j }
+    } catch (e) { return { status: 0, json: null, erro: String(e) } }
+  }, new URL('manifest.json', BASE).href)
+  V('manifest.json responde 200', man.status === 200, `status=${man.status}${man.erro ? ' ' + man.erro : ''}`)
+  V('manifest.json tem name e 2 icones', man.json?.name === 'Seu Legado Seguro' && man.json?.icons?.length === 2,
+    man.json ? `name=${man.json.name} icons=${man.json.icons?.length}` : 'sem JSON')
+
+  // ---- 7. contatos ----
+  const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp"]')].map(a => a.href))
+  V('links de WhatsApp presentes', hrefs.length >= 10, `${hrefs.length} links`)
+  const err = hrefs.filter(h => !h.includes(WA))
+  V(`todo href de WhatsApp contem ${WA}`, err.length === 0, err.length ? JSON.stringify(err.slice(0, 2)) : `${hrefs.length}/${hrefs.length}`)
+  V('nenhum href de WhatsApp com 9999', !hrefs.some(h => /9999/.test(h)), `${hrefs.length} conferidos`)
+
+  const tels = await page.evaluate(() => [...document.querySelectorAll('a[href^="tel:"]')].map(a => a.getAttribute('href')))
+  V(`link tel: ${TEL} no rodape`, tels.length >= 1 && tels.every(t => t === `tel:${TEL}`), JSON.stringify(tels))
+
+  const corpo = await page.evaluate(() => document.body.innerText)
+  V('telefone exibido "(71) 98101-8556"', corpo.includes('(71) 98101-8556'))
+  V('SUSEP "242156562" exibido', corpo.includes('242156562'))
+  V('nenhum "9999" no texto visivel', !/9999/.test(corpo), /9999/.test(corpo) ? JSON.stringify((corpo.match(/.{0,20}9999.{0,12}/) || [''])[0]) : '')
+  V('nenhum "XXXX" no texto visivel', !/XXXX/.test(corpo))
+
+  // ---- 8. os DOIS formularios, por gesto real ----
+  const form1 = page.getByRole('button', { name: 'Enviar pelo WhatsApp' })   // hero
+  const form2 = page.getByRole('button', { name: 'Enviar via WhatsApp' })    // contato
+  V('botao do formulario do hero presente', await form1.count() === 1, `${await form1.count()}`)
+  V('botao do formulario de contato presente', await form2.count() === 1, `${await form2.count()}`)
+
+  if (await form1.count() === 1) {
+    await page.fill('#inicio input[type="text"]', 'Teste Hero')
+    await page.fill('#inicio input[type="tel"]', '(71) 98888-7777')
+    await form1.click({ timeout: 8000 })
+    await page.waitForTimeout(400)
+    const ab = await page.evaluate(() => window.__abertos.slice())
+    V('formulario do hero chamou window.open', ab.length === 1, `${ab.length} chamada(s)`)
+    if (ab.length) {
+      V(`URL do formulario do hero usa wa.me/${WA}`, ab[0].includes(`wa.me/${WA}`), ab[0].slice(0, 70) + '...')
+      V('URL do formulario do hero preserva ?text= com o nome digitado', ab[0].includes('?text=') && /Teste%20Hero/.test(ab[0]))
+    }
+  }
+  if (await form2.count() === 1) {
+    await page.evaluate(() => { window.__abertos.length = 0 })
+    await page.fill('#contato input[type="text"]', 'Teste Contato')
+    await page.fill('#contato input[type="tel"]', '(71) 97777-6666')
+    await form2.click({ timeout: 8000 })
+    await page.waitForTimeout(400)
+    const ab = await page.evaluate(() => window.__abertos.slice())
+    V('formulario de contato chamou window.open', ab.length === 1, `${ab.length} chamada(s)`)
+    if (ab.length) {
+      V(`URL do formulario de contato usa wa.me/${WA}`, ab[0].includes(`wa.me/${WA}`), ab[0].slice(0, 70) + '...')
+      V('URL do formulario de contato preserva ?text=', ab[0].includes('?text=') && /Teste%20Contato/.test(ab[0]))
+    }
+    V('confirmacao "Mensagem enviada!" apareceu', (await page.getByText('Mensagem enviada!').count()) > 0)
+  }
+
+  if (SHOTS) {
+    await page.goto(BASE, { waitUntil: 'networkidle' })
+    await page.evaluate(() => document.fonts.ready.then(() => 0))
+    await varrerPagina(page)
+    await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })
+    for (const [nome, sel] of [['hero', '#inicio'], ['missao', '.faixa-parallax'], ['citacao', '#sobre'], ['rodape', 'body > div > footer']]) {
+      const el = await page.$(sel); if (!el) continue
+      await el.scrollIntoViewIfNeeded().catch(() => {})
+      await page.waitForTimeout(250)
+      await el.screenshot({ path: `${SHOTS}/1440-${nome}.png` })
+    }
+  }
+  await ctx.close()
+}
+
+// ---------------- MOBILE ----------------
+{
+  const { ctx, page } = await abrir(390, 844)
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready.then(() => 0))
+  await varrerPagina(page)
+
+  // A pagina JA transborda 36px em 390px no que esta publicado (gh-pages d737d7c):
+  // .seguradoras-grid vai a 3 colunas abaixo de 560px e 3x126px + gaps nao cabem.
+  // Nao e regressao desta branch e consertar mexeria no layout, que esta fora de
+  // escopo. Entao o que se trava aqui e a PROPRIEDADE "nao piorou, e nao surgiu
+  // transbordo em outro lugar" — nao o valor bonito que a pagina nao tem.
+  const OVERFLOW_HERDADO = 426
+  const ov = await page.evaluate(() => {
+    const vw = document.documentElement.clientWidth
+    const culpados = []
+    for (const el of document.querySelectorAll('*')) {
+      const b = el.getBoundingClientRect()
+      if (b.width === 0) continue
+      if (b.left + b.width + window.scrollX > vw + 1) culpados.push(el.closest('.seguradoras-grid') ? 'seguradoras' : `${el.tagName.toLowerCase()}:${(el.textContent || '').trim().slice(0, 20)}`)
+    }
+    return { doc: document.documentElement.scrollWidth, vis: vw, culpados }
+  })
+  V('rolagem horizontal em 390px nao piorou', ov.doc <= OVERFLOW_HERDADO,
+    `scrollWidth=${ov.doc} (herdado do publicado: ${OVERFLOW_HERDADO}) clientWidth=${ov.vis}`)
+  const fora = [...new Set(ov.culpados.filter(c => c !== 'seguradoras'))]
+  V('nenhum transbordo novo fora do grid de seguradoras', fora.length === 0,
+    fora.length ? JSON.stringify(fora.slice(0, 4)) : `${ov.culpados.length} elementos, todos no grid de seguradoras`)
+
+  const h1 = await page.evaluate(() => {
+    const el = document.querySelector('#inicio h1'); const r = el.getBoundingClientRect()
+    const pai = el.parentElement.getBoundingClientRect(); const cs = getComputedStyle(el)
+    return { larg: Math.round(r.width), pai: Math.round(pai.width), tam: cs.fontSize, peso: cs.fontWeight, linhas: Math.round(r.height / parseFloat(cs.lineHeight)) }
+  })
+  V('h1 do hero cabe na coluna em 390px', h1.larg <= h1.pai + 1,
+    `h1=${h1.larg}px coluna=${h1.pai}px fontSize=${h1.tam} peso=${h1.peso} ~${h1.linhas} linhas`)
+
+  const missao = await page.evaluate(() => {
+    const el = document.querySelector('.faixa-parallax p'); const r = el.getBoundingClientRect()
+    const pai = el.parentElement.getBoundingClientRect()
+    return { larg: Math.round(r.width), pai: Math.round(pai.width), tam: getComputedStyle(el).fontSize }
+  })
+  V('bloco da missao cabe na caixa em 390px', missao.larg <= missao.pai + 1,
+    `${missao.larg}px em ${missao.pai}px, fontSize=${missao.tam}`)
+
+  if (SHOTS) {
+    await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })
+    for (const [nome, sel] of [['hero', '#inicio'], ['missao', '.faixa-parallax'], ['citacao', '#sobre'], ['rodape', 'body > div > footer']]) {
+      const el = await page.$(sel); if (!el) continue
+      await el.scrollIntoViewIfNeeded().catch(() => {})
+      await page.waitForTimeout(250)
+      await el.screenshot({ path: `${SHOTS}/390-${nome}.png` })
+    }
+  }
+  await ctx.close()
+}
+
+await browser.close()
+console.log(`\nmodo=${MODO}  placar: ${ok} ✓ / ${bad} ✗`)
+process.exit(bad === 0 ? 0 : 1)
