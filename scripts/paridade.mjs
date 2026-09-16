@@ -175,7 +175,10 @@ async function pixelDiff (p1, p2) {
 }
 
 let ok = 0, bad = 0
-const V = (n, c, d = '') => { c ? (ok++, console.log(`✓ ${n}${d ? ' — ' + d : ''}`)) : (bad++, console.log(`✗ ${n}${d ? ' — ' + d : ''}`)) }
+const V = (n, c, d = '') => {
+  if (c) { ok++; console.log(`✓ ${n}${d ? ' — ' + d : ''}`) }
+  else { bad++; console.log(`✗ ${n}${d ? ' — ' + d : ''}`) }
+}
 
 console.log(`\n### PARIDADE ${LARG}px  (modo=${MODO})`)
 console.log(`global no ar : ${JSON.stringify(a.dados.__global)}`)

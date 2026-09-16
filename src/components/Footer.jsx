@@ -35,7 +35,7 @@ export default function Footer() {
             <a
               href={`tel:${TELEFONE_TEL}`}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 10,
+                display: 'flex', width: 'fit-content', alignItems: 'center', gap: 8, marginTop: 12,
                 color: 'rgba(255,255,255,0.6)', fontSize: 13, transition: 'color 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.color = 'white'}
