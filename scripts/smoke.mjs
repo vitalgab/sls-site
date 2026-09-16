@@ -27,6 +27,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
+  'impostor-cabecalho',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -158,7 +159,7 @@ async function abrir (w, h, opcoes = {}) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'impostor-veu', 'estresse'].includes(MODO)) {
+    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -167,6 +168,10 @@ async function abrir (w, h, opcoes = {}) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-cabecalho') {
+        // Largura fixa em cima de altura fixa: a marca estica. "Sem deformar" e
+        // uma afirmacao sobre a PROPORCAO, e e so ela que este impostor quebra.
+        t = mutar(t, 'width: auto; display: block', 'width: 300px; display: block', 'largura do logo do cabecalho')
       } else if (MODO === 'impostor-veu') {
         // Devolve o veu HORIZONTAL ao celular, que e o defeito que este commit
         // conserta: em 390px a grade tem uma coluna so, o texto ocupa a largura
@@ -402,6 +407,30 @@ async function contrasteDoHero (page) {
   return fora
 }
 
+// O logo do cabecalho: tamanho, proporcao e se ele cabe na barra. A caixa do
+// <img> e a marca eram coisas diferentes ate agora — o PNG tinha 76% de
+// transparencia na vertical, entao "height: 90" desenhava 21px de marca. O
+// arquivo foi recortado na tinta, e por isso a caixa medida aqui E a marca.
+async function medirLogoCabecalho (page) {
+  return await page.evaluate(() => {
+    const img = document.querySelector('header img')
+    if (!img) return null
+    const r = img.getBoundingClientRect()
+    const barra = img.closest('.container').getBoundingClientRect()
+    const vizinhos = [...img.closest('.container').children]
+      .filter(e => !e.contains(img) && getComputedStyle(e).display !== 'none')
+      .map(e => e.getBoundingClientRect())
+    return {
+      larg: Math.round(r.width), alt: Math.round(r.height),
+      nat: img.naturalWidth / img.naturalHeight,
+      prop: r.width / r.height,
+      transborda: Math.round(Math.max(0, barra.top - r.top) + Math.max(0, r.bottom - barra.bottom)),
+      folga: vizinhos.length ? Math.round(Math.min(...vizinhos.map(v => v.left)) - r.right) : null,
+      completo: img.complete && img.naturalWidth > 0,
+    }
+  })
+}
+
 // ---------------- DESKTOP ----------------
 {
   const { ctx, page } = await abrir(1440, 1000)
@@ -503,6 +532,16 @@ async function contrasteDoHero (page) {
       pil.esqAEsquerda && pil.dirADireita && pil.baseAbaixo && pil.baseCentrada,
       `esq=${pil.esqAEsquerda} dir=${pil.dirADireita} base=${pil.baseAbaixo} centrada=${pil.baseCentrada}`)
   }
+
+  // ---- 3b2. o logo do cabecalho ----
+  const logoD = await medirLogoCabecalho(page)
+  if (!logoD) { console.error('INSTRUMENTO: nao achei o logo do cabecalho'); process.exit(3) }
+  V('logo do cabecalho carregou', logoD.completo, `${logoD.larg}x${logoD.alt}`)
+  V('logo do cabecalho sem deformar (proporcao igual a do arquivo)',
+    Math.abs(logoD.prop - logoD.nat) / logoD.nat < 0.01,
+    `renderizado ${logoD.prop.toFixed(3)} vs natural ${logoD.nat.toFixed(3)}`)
+  V('logo do cabecalho cabe na barra em 1440px', logoD.transborda === 0, `transborda ${logoD.transborda}px`)
+  V('logo do cabecalho nao encosta no menu em 1440px', logoD.folga === null || logoD.folga > 16, `folga ${logoD.folga}px`)
 
   // ---- 3c. as fotos do hero ----
   const fotosHero = await page.evaluate(async () => {
@@ -1029,6 +1068,14 @@ async function contrasteDoHero (page) {
   V('cada rotulo do lado da sua peca em 390px',
     pil390.esqAEsquerda && pil390.dirADireita && pil390.baseAbaixo && pil390.baseCentrada,
     `esq=${pil390.esqAEsquerda} dir=${pil390.dirADireita} base=${pil390.baseAbaixo} centrada=${pil390.baseCentrada}`)
+
+  const logoM = await medirLogoCabecalho(page)
+  if (!logoM) { console.error('INSTRUMENTO: nao achei o logo do cabecalho em 390px'); process.exit(3) }
+  V('logo do cabecalho sem deformar em 390px', Math.abs(logoM.prop - logoM.nat) / logoM.nat < 0.01,
+    `renderizado ${logoM.prop.toFixed(3)} vs natural ${logoM.nat.toFixed(3)}`)
+  V('logo do cabecalho cabe na barra em 390px', logoM.transborda === 0, `transborda ${logoM.transborda}px`)
+  V('logo do cabecalho nao encosta no menu em 390px', logoM.folga === null || logoM.folga > 16,
+    `${logoM.larg}x${logoM.alt}, folga ${logoM.folga}px`)
 
   // Em 390px a grade do hero vira UMA coluna e o texto ocupa a largura inteira.
   // Com o veu horizontal de antes, o fim de cada linha caia sobre a parte clara

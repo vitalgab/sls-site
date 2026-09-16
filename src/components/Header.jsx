@@ -32,9 +32,10 @@ export default function Header() {
       }}>
         <a href="#inicio">
           <img
+            className="logo-header"
             src={`${import.meta.env.BASE_URL}assets/logo-color-transparent.png`}
             alt="Seu Legado Seguro"
-            style={{ height: 90, width: 'auto', display: 'block' }}
+            width="2975" height="451"
           />
         </a>
 
@@ -106,9 +107,17 @@ export default function Header() {
       )}
 
       <style>{`
+        /* O PNG vinha com 3125x1875 e a marca ocupando so 23,6% da altura: o
+           resto era transparencia. Com height: 90 a CAIXA media 90px e a marca
+           aparecia com 21px — e subir a caixa para 122 (os 35% pedidos) faria a
+           <a> transbordar 34px da barra de 88 e cobrir o topo do hero, clicavel,
+           sem nada visivel ali. O arquivo foi recortado na tinta (2975x451) e
+           agora a altura da caixa E a altura da marca. */
+        .logo-header { height: 30px; width: auto; display: block; }
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: block !important; }
+          .logo-header { height: 28px; }
         }
       `}</style>
     </header>
