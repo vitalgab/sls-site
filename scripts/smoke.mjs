@@ -23,7 +23,7 @@ const TEL = '+5571981018556'
 const MODO = process.env.MODO || 'real'
 
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
-  'impostor-missao', 'impostor-persona', 'impostor-manifest']
+  'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -50,7 +50,9 @@ async function abrir (w, h) {
   await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
 
   if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
-  if (MODO === 'impostor-persona') await page.route(/persona-.*\.jpg/, r => r.abort())
+  if (MODO === 'impostor-persona') await page.route(/persona-.*\.(jpg|webp)/, r => r.abort())
+  // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
+  if (MODO === 'impostor-logo') await page.route(/seguradoras\/unimed\.svg/, r => r.abort())
   if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
   if (MODO === 'impostor-css') {
     await page.route(/\.css(\?|$)/, async r => {
@@ -87,7 +89,9 @@ async function varrerPagina (page) {
     }
     window.scrollTo(0, 0)
   })
-  await page.waitForTimeout(500)
+  // As imagens com loading="lazy" so terminam de chegar DEPOIS da rolagem. Com
+  // 500 ms as 11 logos ainda mediam naturalWidth 0 e o teste acusaria falso.
+  await page.waitForTimeout(1600)
 }
 
 // ---------------- DESKTOP ----------------
@@ -191,8 +195,58 @@ async function varrerPagina (page) {
   const personas = await page.evaluate(() => [...document.querySelectorAll('img[src*="persona-"]')]
     .map(i => ({ src: i.getAttribute('src'), nw: i.naturalWidth, nh: i.naturalHeight })))
   V('tres personas no DOM', personas.length === 3, `${personas.length}: ${personas.map(p => p.src.split('/').pop()).join(', ')}`)
+  V('as tres personas sao WebP com alfa', personas.every(p => p.src.endsWith('.webp')),
+    personas.map(p => p.src.split('/').pop()).join(', '))
   V('as tres personas carregaram (naturalWidth > 0)', personas.length === 3 && personas.every(p => p.nw > 0),
     personas.map(p => `${p.nw}x${p.nh}`).join(' | '))
+
+  // o fundo da foto passou a ser CSS: se voltar a ser cor crua no JSX, morde
+  const fundoFoto = await page.evaluate(() => {
+    const cx = document.querySelector('#para-quem img[src*="persona-"]').parentElement
+    return getComputedStyle(cx).backgroundColor
+  })
+  V('fundo da foto e var(--navy) = rgb(0, 58, 112)', fundoFoto === 'rgb(0, 58, 112)', fundoFoto)
+
+  // ---- logos das seguradoras ----
+  // loading="lazy" so busca quando a grade chega perto da viewport, entao e
+  // preciso leva-la ate la e ESPERAR. A espera tem prazo e o erro e engolido de
+  // proposito: se as imagens nao chegarem, a assercao abaixo e que reprova —
+  // esperar pela propria condicao que se afirma, sem prazo, seria vacuidade.
+  const grade = await page.$('.seguradoras-grid')
+  if (grade) {
+    await grade.scrollIntoViewIfNeeded().catch(() => {})
+    await page.waitForFunction(
+      () => [...document.querySelectorAll('.seguradoras-grid img')].every(i => i.complete && i.naturalWidth > 0),
+      null, { timeout: 15000 }).catch(() => {})
+  }
+  const seg = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.seguradoras-grid .seg-card')]
+    return {
+      cartoes: cards.length,
+      imgs: cards.filter(c => c.querySelector('img')).map(c => {
+        const i = c.querySelector('img')
+        return { alt: i.alt, src: i.getAttribute('src'), nw: i.naturalWidth, nh: i.naturalHeight,
+                 alt_larg: Math.round(i.getBoundingClientRect().width),
+                 alt_alt: Math.round(i.getBoundingClientRect().height) }
+      }),
+      textos: cards.filter(c => !c.querySelector('img')).map(c => c.textContent.trim()),
+    }
+  })
+  V('13 cartoes de seguradora', seg.cartoes === 13, `${seg.cartoes}`)
+  V('11 logos como <img>', seg.imgs.length === 11, `${seg.imgs.length} imagens`)
+  const semCarregar = seg.imgs.filter(i => !(i.nw > 0))
+  V('todos os logos carregaram (naturalWidth > 0)', semCarregar.length === 0,
+    semCarregar.length ? JSON.stringify(semCarregar.map(i => i.src)) : seg.imgs.map(i => i.nw).join(','))
+  V('todo logo tem alt com o nome da marca', seg.imgs.every(i => i.alt && i.alt.length > 2),
+    seg.imgs.map(i => i.alt).join(' · '))
+  V('logos com SVG (nao bitmap)', seg.imgs.every(i => i.src.endsWith('.svg')), `${seg.imgs.length}/11`)
+  // altura uniforme: nenhum passa do teto, e nenhum vira fiapo
+  const alturas = seg.imgs.map(i => i.alt_alt)
+  V('altura dos logos entre 14 e 42 px (teto uniforme)',
+    alturas.every(h => h >= 14 && h <= 42), `min=${Math.min(...alturas)} max=${Math.max(...alturas)}`)
+  V('Icatu e NotreDame seguem como texto (logo oficial nao obtido)',
+    seg.textos.length === 2 && seg.textos.join('|').includes('Icatu') && seg.textos.join('|').includes('NotreDame'),
+    JSON.stringify(seg.textos))
 
   // O fetch tem de sair DE DENTRO da pagina: page.request nao passa por
   // page.route(), entao um impostor que derruba o manifest nao alcancaria a
@@ -280,12 +334,10 @@ async function varrerPagina (page) {
   await page.evaluate(() => document.fonts.ready.then(() => 0))
   await varrerPagina(page)
 
-  // A pagina JA transborda 36px em 390px no que esta publicado (gh-pages d737d7c):
-  // .seguradoras-grid vai a 3 colunas abaixo de 560px e 3x126px + gaps nao cabem.
-  // Nao e regressao desta branch e consertar mexeria no layout, que esta fora de
-  // escopo. Entao o que se trava aqui e a PROPRIEDADE "nao piorou, e nao surgiu
-  // transbordo em outro lugar" — nao o valor bonito que a pagina nao tem.
-  const OVERFLOW_HERDADO = 426
+  // O que estava publicado transbordava 36px aqui (scrollWidth 426): a grade de
+  // seguradoras ia a 3 colunas abaixo de 560px e 3x126px + gaps nao cabiam em
+  // 350px de area util. Agora a grade e auto-fit/minmax e o transbordo acabou,
+  // entao a assercao e IGUALDADE, sem folga herdada.
   const ov = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth
     const culpados = []
@@ -296,11 +348,10 @@ async function varrerPagina (page) {
     }
     return { doc: document.documentElement.scrollWidth, vis: vw, culpados }
   })
-  V('rolagem horizontal em 390px nao piorou', ov.doc <= OVERFLOW_HERDADO,
-    `scrollWidth=${ov.doc} (herdado do publicado: ${OVERFLOW_HERDADO}) clientWidth=${ov.vis}`)
-  const fora = [...new Set(ov.culpados.filter(c => c !== 'seguradoras'))]
-  V('nenhum transbordo novo fora do grid de seguradoras', fora.length === 0,
-    fora.length ? JSON.stringify(fora.slice(0, 4)) : `${ov.culpados.length} elementos, todos no grid de seguradoras`)
+  V('sem rolagem horizontal em 390px', ov.doc === ov.vis,
+    `scrollWidth=${ov.doc} clientWidth=${ov.vis}`)
+  V('nenhum elemento ultrapassa a borda em 390px', ov.culpados.length === 0,
+    ov.culpados.length ? JSON.stringify([...new Set(ov.culpados)].slice(0, 4)) : '0 elementos')
 
   const h1 = await page.evaluate(() => {
     const el = document.querySelector('#inicio h1'); const r = el.getBoundingClientRect()
