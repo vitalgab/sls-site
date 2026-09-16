@@ -132,7 +132,7 @@ export default function Sobre() {
                 alt="Pilares Seu Legado Seguro: Confiança, Longo Prazo e Foco no Cliente"
               />
               <span className="pilar-rotulo pilar-dir" style={{ color: '#003A70' }}>Confiança</span>
-              <span className="pilar-rotulo pilar-base" style={{ color: '#A6872F' }}>Longo prazo</span>
+              <span className="pilar-rotulo pilar-base" style={{ color: '#8F7325' }}>Longo prazo</span>
             </div>
 
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: 8 }}>

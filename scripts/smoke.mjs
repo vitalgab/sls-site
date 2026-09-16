@@ -27,7 +27,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
-  'impostor-cabecalho', 'impostor-impar', 'impostor-herdada',
+  'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -169,7 +169,8 @@ async function abrir (w, h, opcoes = {}) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'impostor-impar', 'estresse'].includes(MODO)) {
+    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'impostor-impar', 'impostor-dourado',
+    'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -178,6 +179,11 @@ async function abrir (w, h, opcoes = {}) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-dourado') {
+        // Devolve ao rotulo o dourado da PECA. Ele fica bonito e ilegivel:
+        // 3,43:1 sobre branco, abaixo do piso AA para texto pequeno. E o
+        // defeito que estava no ar, e nenhuma outra assercao o pegava.
+        t = mutar(t, '`#8F7325`', '`#A6872F`', 'cor do rotulo Longo prazo')
       } else if (MODO === 'impostor-impar') {
         // Tira uma parceira: N vai de 18 para 17, IMPAR.
         //
@@ -540,9 +546,12 @@ async function medirLogoCabecalho (page) {
     V('rotulos em Montserrat 600, caixa alta e com tracking',
       pil.fam.every(f => f === 'Montserrat') && pil.peso.every(w => w === '600') && pil.caixaAlta && pil.tracking,
       `${JSON.stringify(pil.fam)} ${JSON.stringify(pil.peso)} caixaAlta=${pil.caixaAlta} tracking=${pil.tracking}`)
-    // cor de cada rotulo = cor da peca a que ele pertence: aco, navy, dourado.
-    V('cada rotulo na cor da sua peca',
-      JSON.stringify(pil.cores) === JSON.stringify(['rgb(75, 106, 138)', 'rgb(0, 58, 112)', 'rgb(166, 135, 47)']),
+    // Aco e navy sao a cor exata da peca. O dourado do rotulo da base e MAIS
+    // ESCURO que o da peca (#8F7325 contra #A6872F): o da peca dava 3,43:1 sobre
+    // branco, abaixo do piso AA para texto pequeno. A peca do triangulo nao
+    // mudou — quem mudou foi a letra.
+    V('cada rotulo na cor esperada',
+      JSON.stringify(pil.cores) === JSON.stringify(['rgb(75, 106, 138)', 'rgb(0, 58, 112)', 'rgb(143, 115, 37)']),
       JSON.stringify(pil.cores))
     V('rotulos dos pilares nao cortam nem sobrepoem a figura em 1440px',
       pil.cortados.length === 0 && pil.sobrepostos.length === 0 && pil.fora.length === 0,
@@ -555,6 +564,32 @@ async function medirLogoCabecalho (page) {
   // ---- 3b2. o logo do cabecalho ----
   const logoD = await medirLogoCabecalho(page)
   if (!logoD) { console.error('INSTRUMENTO: nao achei o logo do cabecalho'); process.exit(3) }
+  // Contraste dos TRES rotulos contra o fundo que esta atras deles. O dourado
+  // era o que reprovava, mas afirmar so ele deixaria os outros dois livres para
+  // regredir sem ninguem ver.
+  const ctRot = await page.evaluate(() => {
+    const resolver = el => {
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor
+        if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c
+      }
+      return 'rgb(255, 255, 255)'
+    }
+    const canal = s => { const m = s.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 } }
+    const compor = (f0, b0) => { const f = canal(f0), b = canal(b0)
+      return { r: f.r * f.a + b.r * (1 - f.a), g: f.g * f.a + b.g * (1 - f.a), b: f.b * f.a + b.b * (1 - f.a), a: 1 } }
+    const lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    const lum = c => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b)
+    return [...document.querySelectorAll('.pilar-rotulo')].map(el => {
+      const cor = getComputedStyle(el).color, fundo = resolver(el)
+      const x = lum(compor(cor, fundo)), y = lum(canal(fundo))
+      return { txt: el.textContent, cor, fundo,
+        razao: +(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05))).toFixed(2) }
+    })
+  })
+  V('contraste AA dos tres rotulos dos pilares', ctRot.length === 3 && ctRot.every(r => r.razao >= 4.5),
+    ctRot.map(r => `${r.txt} ${r.razao}:1`).join(' | '))
+
   V('logo do cabecalho carregou', logoD.completo, `${logoD.larg}x${logoD.alt}`)
   V('logo do cabecalho sem deformar (proporcao igual a do arquivo)',
     Math.abs(logoD.prop - logoD.nat) / logoD.nat < 0.01,
