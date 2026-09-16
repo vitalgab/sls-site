@@ -20,3 +20,17 @@ reproduzível por `scripts/personas.py`.
 
 Ficam em `public/seguradoras/`, com procedência própria em
 [`public/seguradoras/FONTES.md`](../seguradoras/FONTES.md).
+
+## Fotos do hero
+
+Servidas localmente pelo mesmo motivo da faixa: o hero é a primeira coisa que a
+pessoa vê, e um engasgo de CDN de terceiro deixava-o sem foto nenhuma.
+
+| arquivo | tema | autor | origem | licença |
+|---|---|---|---|---|
+| `hero-1.webp` | família reunida | MART PRODUCTION | [pexels.com/photo/family-hugging-7414939](https://www.pexels.com/photo/family-hugging-7414939/) | [Licença Pexels](https://www.pexels.com/license/) |
+| `hero-2.webp` | carreira | Gustavo Fring | [pexels.com/photo/man-and-woman-sitting-sharing-a-computer-5621960](https://www.pexels.com/photo/man-and-woman-sitting-sharing-a-computer-5621960/) | [Licença Pexels](https://www.pexels.com/license/) |
+| `hero-3.webp` | proteção / lar | Monstera Production | [pexels.com/photo/smiling-black-family-resting-on-couch-7114420](https://www.pexels.com/photo/smiling-black-family-resting-on-couch-7114420/) | [Licença Pexels](https://www.pexels.com/license/) |
+
+Todas 1920x1280, WebP q=82, entre 162 e 238 kB. Uso comercial livre, atribuição
+não exigida — fica registrada aqui para a origem ser rastreável.

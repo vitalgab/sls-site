@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { WA_NUMBER } from '../contato'
 
+// Servidas do proprio site, nao de CDN de terceiro: a foto do hero e a primeira
+// coisa que a pessoa ve, e um engasgo no Unsplash deixava o hero sem foto
+// nenhuma, sem erro no console. Procedencia em public/assets/FONTES.md.
 const slides = [
-  { url: 'https://images.unsplash.com/photo-1484665754804-74b091211472?w=1440&q=90&fit=crop&auto=format', alt: 'Família feliz' },
-  { url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1440&q=90&fit=crop&auto=format', alt: 'Patrimônio protegido' },
-  { url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1440&q=90&fit=crop&auto=format', alt: 'Carreira profissional' },
+  { url: `${import.meta.env.BASE_URL}assets/hero-1.webp`, alt: 'Família reunida em casa' },
+  { url: `${import.meta.env.BASE_URL}assets/hero-2.webp`, alt: 'Profissionais trabalhando juntos' },
+  { url: `${import.meta.env.BASE_URL}assets/hero-3.webp`, alt: 'Família em casa no sofá' },
 ]
 
 const iconeWhats = (
@@ -139,12 +142,7 @@ export default function Hero() {
         }} />
       ))}
 
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(95deg, rgba(0,20,52,0.97) 0%, rgba(0,20,52,0.92) 35%, rgba(0,20,52,0.70) 55%, rgba(0,20,52,0.25) 75%, rgba(0,20,52,0.05) 100%)',
-        zIndex: 1,
-      }} />
+      <div className="hero-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
 
       <div className="container hero-grid" style={{
         display: 'grid',
@@ -226,6 +224,33 @@ export default function Hero() {
       </div>
 
       <style>{`
+        /* O veu escuro existe para o texto ser legivel, nao para esconder a
+           foto. Ele e DIRECIONAL: forte so onde o texto passa, quase nada no
+           resto — ate 0,02 na ponta direita, contra 0,05 de antes, e 0,55 no
+           meio contra 0,70. */
+        .hero-overlay {
+          background: linear-gradient(95deg,
+            rgba(0,20,52,0.90) 0%,
+            rgba(0,20,52,0.86) 34%,
+            rgba(0,20,52,0.62) 50%,
+            rgba(0,20,52,0.14) 60%,
+            rgba(0,20,52,0.02) 78%,
+            rgba(0,20,52,0.00) 100%);
+        }
+        /* Abaixo de 900px a grade vira UMA coluna e o texto ocupa a largura
+           inteira — o gradiente horizontal deixava o fim de cada linha sobre a
+           parte clara da foto. Medido em producao: 2,04:1 em 390px, reprovando
+           AA com folga. No celular o veu passa a ser VERTICAL, forte em cima,
+           onde o texto esta, e leve embaixo. */
+        @media (max-width: 900px) {
+          .hero-overlay {
+            background: linear-gradient(180deg,
+              rgba(0,20,52,0.86) 0%,
+              rgba(0,20,52,0.80) 40%,
+              rgba(0,20,52,0.45) 66%,
+              rgba(0,20,52,0.12) 100%);
+          }
+        }
         @media (max-width: 900px) {
           .hero-grid {
             grid-template-columns: 1fr !important;

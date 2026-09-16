@@ -26,7 +26,7 @@ const MODO = process.env.MODO || 'real'
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
-  'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital',
+  'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -71,10 +71,22 @@ async function irPara (page, url) {
   }
 }
 
-async function abrir (w, h) {
+async function abrir (w, h, opcoes = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
   const page = await ctx.newPage()
   await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
+  // O carrossel do hero troca de foto sozinho a cada 5s. Medir contraste com ele
+  // girando nao da: a foto muda ENTRE os dois quadros da mascara, a diferenca
+  // passa a cobrir o hero inteiro e o "fundo mais claro" vira o cartao branco —
+  // 1,00:1 sobre rgb(255,255,255), que e assinatura de medicao quebrada.
+  // Entao ele fica congelado por padrao, e a rotacao tem bloco proprio, com o
+  // relogio correndo, mais abaixo.
+  if (opcoes.congelarCarrossel !== false) {
+    await page.addInitScript(() => {
+      const orig = window.setInterval
+      window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
+    })
+  }
 
   if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
   // Tira o eixo ITALICO do pedido ao Google Fonts. A face italica de verdade
@@ -146,7 +158,7 @@ async function abrir (w, h) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'estresse'].includes(MODO)) {
+    'impostor-grade', 'impostor-veu', 'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -155,6 +167,13 @@ async function abrir (w, h) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-veu') {
+        // Devolve o veu HORIZONTAL ao celular, que e o defeito que este commit
+        // conserta: em 390px a grade tem uma coluna so, o texto ocupa a largura
+        // inteira e o fim de cada linha cai sobre a parte clara da foto. Em
+        // producao isso media 2,04:1 e 2,02:1 em dois dos tres slides.
+        t = mutar(t, 'background: linear-gradient(180deg,\n              rgba(0,20,52,0.86) 0%',
+          'background: linear-gradient(95deg,\n              rgba(0,20,52,0.86) 0%', 'direcao do veu no celular')
       } else if (MODO === 'impostor-grade') {
         // 3 nao divide 4: o quarto cartao fica sozinho na segunda linha, que e
         // exatamente o defeito que a assercao existe para pegar.
@@ -316,6 +335,73 @@ async function medirPilares (page) {
   })
 }
 
+// Contraste do texto do hero contra a FOTO, por slide. Mesma tecnica da faixa:
+// mascara do texto pela diferenca entre o quadro com e sem o <h1>/<p>, e o valor
+// lido no quadro SEM texto. O <h1> e o <p> sao escondidos por visibility, nunca
+// por display: tirar do fluxo moveria tudo e a diferenca deixaria de ser o texto.
+async function contrasteDoHero (page) {
+  const dots = page.locator('#inicio button[aria-label^="Slide"]')
+  const n = await dots.count()
+  if (!n) return null
+  // topo antes de comecar: o hero e o primeiro bloco e o resto da suite deixa a
+  // pagina rolada. Sem isto o primeiro clique rola a pagina POR CONTA PROPRIA, e
+  // o quadro sai de uma cena que ainda esta se acomodando.
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(400)
+  const fora = []
+  for (let i = 0; i < n; i++) {
+    await dots.nth(i).click()
+    await page.waitForTimeout(1500)   // a transicao de opacidade e 1,2s
+    const alvo = page.locator('#inicio')
+    const com = (await alvo.screenshot()).toString('base64')
+    await page.evaluate(() => {
+      const st = document.createElement('style'); st.id = '__oc'
+      st.textContent = '#inicio h1, #inicio h1 ~ p { visibility: hidden !important }'
+      document.head.appendChild(st)
+    })
+    await page.waitForTimeout(180)
+    const sem = (await alvo.screenshot()).toString('base64')
+    await page.evaluate(() => document.getElementById('__oc')?.remove())
+    const r = await page.evaluate(async ([a, b]) => {
+      const carregar = async d => { const i = new Image(); await new Promise(r => { i.onload = r; i.src = 'data:image/png;base64,' + d }); return i }
+      const dados = im => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height
+        const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height) }
+      const A = dados(await carregar(a)), B = dados(await carregar(b))
+      // Quadros de tamanhos diferentes fariam a comparacao ler pixels trocados,
+      // e o resultado disso e plausivel demais para dar na vista.
+      if (A.width !== B.width || A.height !== B.height) {
+        return { erro: `quadros de tamanhos diferentes: ${A.width}x${A.height} vs ${B.width}x${B.height}` }
+      }
+      const w = A.width, h = A.height
+      const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+      const m = new Uint8Array(w * h); let nG = 0
+      for (let i = 0, k = 0; i < A.data.length; i += 4, k++) {
+        const d = Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i+1] - B.data[i+1]) + Math.abs(A.data[i+2] - B.data[i+2])
+        if (d > 30) { m[k] = 1; nG++ }
+      }
+      const md = new Uint8Array(w * h), R = 2
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (!m[y * w + x]) continue
+        for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+          const yy = y + dy, xx = x + dx
+          if (yy >= 0 && yy < h && xx >= 0 && xx < w) md[yy * w + xx] = 1
+        }
+      }
+      let cor = null, maxL = -1
+      for (let k = 0; k < md.length; k++) {
+        if (!md[k]) continue
+        const i = k * 4, Rr = B.data[i], G = B.data[i+1], Bb = B.data[i+2]
+        const L = 0.2126 * f(Rr) + 0.7152 * f(G) + 0.0722 * f(Bb)
+        if (L > maxL) { maxL = L; cor = [Rr, G, Bb] }
+      }
+      return { nG, cor, razao: 1.05 / (maxL + 0.05), fracao: nG / (w * h) }
+    }, [com, sem])
+    if (r.erro) { console.error(`INSTRUMENTO: hero slide ${i + 1}: ${r.erro}`); process.exit(3) }
+    fora.push(r)
+  }
+  return fora
+}
+
 // ---------------- DESKTOP ----------------
 {
   const { ctx, page } = await abrir(1440, 1000)
@@ -417,6 +503,40 @@ async function medirPilares (page) {
       pil.esqAEsquerda && pil.dirADireita && pil.baseAbaixo && pil.baseCentrada,
       `esq=${pil.esqAEsquerda} dir=${pil.dirADireita} base=${pil.baseAbaixo} centrada=${pil.baseCentrada}`)
   }
+
+  // ---- 3c. as fotos do hero ----
+  const fotosHero = await page.evaluate(async () => {
+    const divs = [...document.querySelectorAll('#inicio > div')]
+      .filter(d => getComputedStyle(d).backgroundImage.includes('url('))
+    const out = []
+    for (const d of divs) {
+      const u = (getComputedStyle(d).backgroundImage.match(/url\("?([^")]+)"?\)/) || [])[1]
+      if (!u) continue
+      let status = 0, larg = 0
+      try { status = (await fetch(u)).status } catch { status = 0 }
+      larg = await new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = u })
+      out.push({ url: u, status, larg })
+    }
+    return out
+  })
+  V('tres fotos de hero no DOM', fotosHero.length === 3, `${fotosHero.length}: ${fotosHero.map(f => f.url.split('/').pop()).join(', ')}`)
+  // Mesmo motivo da faixa: um engasgo no CDN de terceiro deixava o hero — a
+  // PRIMEIRA coisa que a pessoa ve — sem foto nenhuma, e sem erro no console.
+  V('toda foto do hero e local e decodifica',
+    fotosHero.length === 3 && fotosHero.every(f => /\/sls-site\/assets\/hero-[123]\.webp$/.test(f.url) && f.status === 200 && f.larg > 0),
+    fotosHero.map(f => `${f.url.split('/').pop()} http=${f.status} w=${f.larg}`).join(' | '))
+
+  const heroDesk = await contrasteDoHero(page)
+  if (!heroDesk || heroDesk.some(h => !h.nG)) { console.error('INSTRUMENTO: mascara do texto do hero vazia em 1440px'); process.exit(3) }
+  // Mascara gigante = a foto trocou entre os dois quadros e a diferenca virou o
+  // hero inteiro. O numero que sairia dai e sobre o cartao branco, nao sobre a
+  // foto — e melhor morrer do que reportar 1,00:1 como se fosse medicao.
+  if (heroDesk.some(h => h.fracao > 0.25)) {
+    console.error(`INSTRUMENTO: mascara do hero grande demais (${heroDesk.map(h => (100*h.fracao).toFixed(0) + '%').join(', ')}) — o carrossel nao congelou`)
+    process.exit(3)
+  }
+  heroDesk.forEach((h, i) => V(`contraste AA do texto do hero, slide ${i + 1}, em 1440px`, h.razao >= 4.5,
+    `${h.razao.toFixed(2)}:1 sobre rgb(${h.cor.join(',')}), ${h.nG}px de glifo`))
   V('zero elementos com fonte serifada', sweep.ruins.length === 0, sweep.ruins.length ? JSON.stringify(sweep.ruins.slice(0, 3)) : `0 de ${sweep.varridos}`)
 
   // ---- 4. destaques no peso do logo ----
@@ -910,6 +1030,21 @@ async function medirPilares (page) {
     pil390.esqAEsquerda && pil390.dirADireita && pil390.baseAbaixo && pil390.baseCentrada,
     `esq=${pil390.esqAEsquerda} dir=${pil390.dirADireita} base=${pil390.baseAbaixo} centrada=${pil390.baseCentrada}`)
 
+  // Em 390px a grade do hero vira UMA coluna e o texto ocupa a largura inteira.
+  // Com o veu horizontal de antes, o fim de cada linha caia sobre a parte clara
+  // da foto: media em producao 2,04:1 e 2,02:1 em dois dos tres slides. Por isso
+  // os TRES sao medidos aqui, e nao so um.
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(300)
+  const heroMob = await contrasteDoHero(page)
+  if (!heroMob || heroMob.some(h => !h.nG)) { console.error('INSTRUMENTO: mascara do texto do hero vazia em 390px'); process.exit(3) }
+  if (heroMob.some(h => h.fracao > 0.25)) {
+    console.error(`INSTRUMENTO: mascara do hero grande demais em 390px (${heroMob.map(h => (100*h.fracao).toFixed(0) + '%').join(', ')})`)
+    process.exit(3)
+  }
+  heroMob.forEach((h, i) => V(`contraste AA do texto do hero, slide ${i + 1}, em 390px`, h.razao >= 4.5,
+    `${h.razao.toFixed(2)}:1 sobre rgb(${h.cor.join(',')}), ${h.nG}px de glifo`))
+
   // ---- folga dos rotulos, nas cinco larguras ----
   // 12px e o piso: o deploy do triangulo caiu porque "CONFIANCA" renderizou 94px
   // no runner e 92 aqui. Encostar na borda e o mesmo defeito esperando a proxima
@@ -938,6 +1073,31 @@ async function medirPilares (page) {
       await el.screenshot({ path: `${SHOTS}/390-${nome}.png` })
     }
   }
+  await ctx.close()
+}
+
+// ---------------- CARROSSEL, COM O RELOGIO CORRENDO ----------------
+// Todo o resto roda com o carrossel congelado, para a medicao de contraste ser
+// determinista. A rotacao em si precisa de um bloco proprio, senao congelar
+// vira desligar: a suite ficaria verde com o carrossel parado em producao.
+{
+  const { ctx, page } = await abrir(1440, 900, { congelarCarrossel: false })
+  await irPara(page, BASE)
+  await page.evaluate(() => document.fonts.ready.then(() => 0))
+  await page.waitForTimeout(600)
+  const ativo = () => page.evaluate(() => {
+    const b = [...document.querySelectorAll('#inicio button[aria-label^="Slide"]')]
+    return b.findIndex(x => Math.round(x.getBoundingClientRect().width) > 12)
+  })
+  const antes = await ativo()
+  V('o hero tem 3 slides com botao proprio',
+    (await page.locator('#inicio button[aria-label^="Slide"]').count()) === 3,
+    `${await page.locator('#inicio button[aria-label^="Slide"]').count()} botoes`)
+  V('o slide ativo e legivel pelo botao largo', antes >= 0, `indice ${antes}`)
+  await page.waitForTimeout(7000)   // o intervalo e 5s
+  const depois = await ativo()
+  V('o carrossel troca de slide sozinho', depois >= 0 && depois !== antes,
+    `slide ${antes} -> ${depois} em 7s`)
   await ctx.close()
 }
 
