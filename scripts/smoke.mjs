@@ -26,7 +26,11 @@ const MODO = process.env.MODO || 'real'
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
-  'impostor-overlay', 'impostor-pilares']
+  'impostor-overlay', 'impostor-pilares',
+  // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
+  // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
+  // modo alarga o tracking de proposito e exige que TUDO continue verde.
+  'estresse']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -118,7 +122,7 @@ async function abrir (w, h) {
       await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
-  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares'].includes(MODO)) {
+  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares', 'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -127,6 +131,17 @@ async function abrir (w, h) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'estresse') {
+        // ESTRESSE_PX existe para PROVAR que este modo esta ligado nas
+        // assercoes: com +1px tudo fica verde (e a folga encolhe, medida), com
+        // +12px a folga cai abaixo do piso e o modo fica vermelho. Sem esse
+        // segundo ponto, "passou no estresse" nao significaria nada.
+        const dx = Number(process.env.ESTRESSE_PX || 1)
+        if (!Number.isFinite(dx)) { console.error(`ESTRESSE_PX invalido: ${process.env.ESTRESSE_PX}`); process.exit(3) }
+        for (const base of [1.2, 0.6, 0.4]) {
+          t = mutar(t, `letter-spacing: ${base}px`, `letter-spacing: ${(base + dx).toFixed(2)}px`,
+            `tracking dos rotulos (${base}px -> +${dx}px)`)
+        }
       } else if (MODO === 'impostor-pilares') {
         // A figura passa a poder crescer sem limite: ela empurra os rotulos para
         // fora da coluna, e e a mesma mutacao que morde nas DUAS larguras
@@ -243,6 +258,15 @@ async function medirPilares (page) {
       // "alinhado a peca da sua cor" e uma afirmacao de POSICAO, e e a unica
       // parte disto que uma folha de estilo consegue inverter sem quebrar mais
       // nada — por isso ela e o alvo do impostor.
+      // folga ate a borda do container: rotulo colado na borda e a vespera do
+      // rotulo POR FORA dela na proxima maquina que renderizar 2px mais largo.
+      folga: (() => {
+        const cont = fig.closest('.container') || fig.parentElement
+        const rc = cont.getBoundingClientRect()
+        return Math.round(Math.min(...rot.flatMap(e => {
+          const r = e.getBoundingClientRect(); return [r.x - rc.x, rc.right - r.right]
+        })))
+      })(),
       esqAEsquerda: cai(rot[0]).x + cai(rot[0]).w <= ci.x + 1,
       dirADireita: cai(rot[1]).x >= ci.x + ci.w - 1,
       baseAbaixo: cai(rot[2]).y >= ci.y + ci.h - 1,
@@ -764,6 +788,25 @@ async function medirPilares (page) {
   V('cada rotulo do lado da sua peca em 390px',
     pil390.esqAEsquerda && pil390.dirADireita && pil390.baseAbaixo && pil390.baseCentrada,
     `esq=${pil390.esqAEsquerda} dir=${pil390.dirADireita} base=${pil390.baseAbaixo} centrada=${pil390.baseCentrada}`)
+
+  // ---- folga dos rotulos, nas cinco larguras ----
+  // 12px e o piso: o deploy do triangulo caiu porque "CONFIANCA" renderizou 94px
+  // no runner e 92 aqui. Encostar na borda e o mesmo defeito esperando a proxima
+  // maquina.
+  const FOLGA_MIN = 12
+  for (const larg of [1440, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width: larg, height: 900 })
+    await page.waitForTimeout(320)
+    const m = await medirPilares(page)
+    if (!m || m.folga === undefined) { console.error(`INSTRUMENTO: pilares nao mediveis em ${larg}px`); process.exit(3) }
+    V(`rotulos com folga >= ${FOLGA_MIN}px da borda em ${larg}px`, m.folga >= FOLGA_MIN,
+      `menor folga ${m.folga}px` + (m.cortados.length ? ` | CORTADOS ${JSON.stringify(m.cortados)}` : '') +
+      (m.fora.length ? ` | FORA ${JSON.stringify(m.fora)}` : ''))
+    V(`nenhum rotulo cortado em ${larg}px`, m.cortados.length === 0 && m.fora.length === 0,
+      `cortados=${JSON.stringify(m.cortados)} fora=${JSON.stringify(m.fora)}`)
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.waitForTimeout(320)
 
   if (SHOTS) {
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })

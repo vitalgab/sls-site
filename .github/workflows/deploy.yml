@@ -38,9 +38,9 @@ jobs:
   publicar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -74,6 +74,14 @@ jobs:
 
       - name: Smoke
         run: node scripts/smoke.mjs
+
+      # A fonte do runner nao renderiza igual a de nenhuma outra maquina, e foi
+      # por 2px de diferenca que um deploy caiu. Este passo alarga o tracking dos
+      # rotulos em 1px e exige que a suite continue VERDE — robustez, nao
+      # impostor. ESTRESSE_PX=12 derruba 11 assercoes, que e como se sabe que o
+      # modo esta ligado nelas.
+      - name: Os rótulos aguentam fonte mais larga
+        run: MODO=estresse node scripts/smoke.mjs
 
       # Suíte verde não vale nada se ela não souber reprovar. Cada impostor muta
       # o artefato SERVIDO (folha de estilo ou bundle) e tem de derrubar o
