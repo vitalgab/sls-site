@@ -26,7 +26,7 @@ const MODO = process.env.MODO || 'real'
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
-  'impostor-overlay']
+  'impostor-overlay', 'impostor-pilares']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -118,7 +118,7 @@ async function abrir (w, h) {
       await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
-  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay'].includes(MODO)) {
+  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -127,6 +127,12 @@ async function abrir (w, h) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-pilares') {
+        // duas regras, dois tamanhos: so a de 92px deixaria a assercao de 390px
+        // VERDE sob o impostor — negativo que nao cobre a largura medida nao e
+        // controle nenhum.
+        t = mutar(t, 'max-width: 92px', 'max-width: 24px', 'largura dos rotulos (desktop)')
+        t = mutar(t, 'max-width: 68px', 'max-width: 24px', 'largura dos rotulos (mobile)')
       } else if (MODO === 'impostor-overlay') {
         t = mutar(t, 'linear-gradient(0deg, rgba(0,15,40,0.82) 0%, rgba(0,15,40,0.65) 100%)',
           'linear-gradient(0deg, rgba(0,15,40,0) 0%, rgba(0,15,40,0) 100%)', 'overlay da faixa')
@@ -211,6 +217,41 @@ async function contrasteDaFaixa (page) {
   }, [com, sem])
 }
 
+// Os rotulos dos pilares vivem FORA da figura. Duas coisas podem dar errado sem
+// erro nenhum no console: o texto transbordar a propria caixa (CONFIANCA e uma
+// palavra so e nao quebra linha) ou a caixa pisar em cima da imagem. As duas se
+// medem por geometria, e as duas tem de ser medidas em CADA largura — o que
+// cabe em 1440 nao diz nada sobre 390.
+async function medirPilares (page) {
+  return await page.evaluate(() => {
+    const fig = document.querySelector('.pilares-fig')
+    if (!fig) return null
+    fig.scrollIntoView({ block: 'center' })
+    const img = fig.querySelector('.pilares-img')
+    const rot = [...fig.querySelectorAll('.pilar-rotulo')]
+    if (!img || !rot.length) return { n: rot.length, img: !!img }
+    const cai = e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } }
+    const ci = cai(img)
+    const bate = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y)
+    return {
+      n: rot.length,
+      img: true,
+      src: img.getAttribute('src'),
+      natural: img.naturalWidth,
+      cortados: rot.filter(e => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)
+        .map(e => `${e.textContent}(${e.scrollWidth}>${e.clientWidth})`),
+      sobrepostos: rot.filter(e => bate(cai(e), ci)).map(e => e.textContent),
+      fora: rot.filter(e => { const r = cai(e); return r.x < 0 || r.x + r.w > window.innerWidth })
+        .map(e => e.textContent),
+      cores: rot.map(e => getComputedStyle(e).color),
+      fam: rot.map(e => getComputedStyle(e).fontFamily.split(',')[0].replace(/"/g, '')),
+      peso: rot.map(e => getComputedStyle(e).fontWeight),
+      caixaAlta: rot.every(e => getComputedStyle(e).textTransform === 'uppercase'),
+      tracking: rot.every(e => parseFloat(getComputedStyle(e).letterSpacing) > 0),
+    }
+  })
+}
+
 // ---------------- DESKTOP ----------------
 {
   const { ctx, page } = await abrir(1440, 1000)
@@ -273,11 +314,32 @@ async function contrasteDaFaixa (page) {
         ruins.push({ tag: el.tagName.toLowerCase(), ff, txt: (el.textContent || '').trim().slice(0, 26) })
       }
     }
-    const svgTexts = document.querySelectorAll('#sobre svg text').length
-    return { varridos: alvos.length, ruins, svgTexts }
+    // os rotulos dos pilares sairam do SVG e viraram HTML: o que precisa ficar
+    // provado e que a varredura PASSA por eles, nao onde eles moram.
+    const rotPilares = alvos.filter(el => el.classList && el.classList.contains('pilar-rotulo')).length
+    return { varridos: alvos.length, ruins, rotPilares }
   })
   V('varredura cobriu a arvore', sweep.varridos > 300, `${sweep.varridos} elementos`)
-  V('varredura alcancou os rotulos do monograma (SVG)', sweep.svgTexts >= 5, `${sweep.svgTexts} <text> em #sobre`)
+  V('varredura alcancou os rotulos dos pilares', sweep.rotPilares === 3, `${sweep.rotPilares} rotulos varridos`)
+
+  // ---- 3b. a figura dos pilares e os tres rotulos ----
+  const pil = await medirPilares(page)
+  if (!pil) { console.error('INSTRUMENTO: .pilares-fig nao existe'); process.exit(3) }
+  V('figura dos pilares e os 3 rotulos existem', pil.n === 3 && pil.img === true, `${pil.n} rotulos, img=${pil.img}`)
+  if (pil.natural !== undefined) {
+    V('triangulo e local e decodifica', String(pil.src).includes('/sls-site/assets/triangulo-pilares.svg') && pil.natural > 0,
+      `${pil.src} naturalWidth=${pil.natural}`)
+    V('rotulos em Montserrat 600, caixa alta e com tracking',
+      pil.fam.every(f => f === 'Montserrat') && pil.peso.every(w => w === '600') && pil.caixaAlta && pil.tracking,
+      `${JSON.stringify(pil.fam)} ${JSON.stringify(pil.peso)} caixaAlta=${pil.caixaAlta} tracking=${pil.tracking}`)
+    // cor de cada rotulo = cor da peca a que ele pertence: aco, navy, dourado.
+    V('cada rotulo na cor da sua peca',
+      JSON.stringify(pil.cores) === JSON.stringify(['rgb(75, 106, 138)', 'rgb(0, 58, 112)', 'rgb(166, 135, 47)']),
+      JSON.stringify(pil.cores))
+    V('rotulos dos pilares nao cortam nem sobrepoem a figura em 1440px',
+      pil.cortados.length === 0 && pil.sobrepostos.length === 0 && pil.fora.length === 0,
+      `cortados=${JSON.stringify(pil.cortados)} sobrepostos=${JSON.stringify(pil.sobrepostos)} fora=${JSON.stringify(pil.fora)}`)
+  }
   V('zero elementos com fonte serifada', sweep.ruins.length === 0, sweep.ruins.length ? JSON.stringify(sweep.ruins.slice(0, 3)) : `0 de ${sweep.varridos}`)
 
   // ---- 4. destaques no peso do logo ----
@@ -681,6 +743,12 @@ async function contrasteDaFaixa (page) {
   }
   V('contraste AA do texto da faixa em 390px', ct390.razao >= 4.5,
     `${ct390.razao.toFixed(2)}:1 sobre rgb(${ct390.cor.join(',')}), ${ct390.nGlifo}px de glifo`)
+
+  const pil390 = await medirPilares(page)
+  if (!pil390 || pil390.natural === undefined) { console.error('INSTRUMENTO: pilares nao mediveis em 390px'); process.exit(3) }
+  V('rotulos dos pilares nao cortam nem sobrepoem a figura em 390px',
+    pil390.cortados.length === 0 && pil390.sobrepostos.length === 0 && pil390.fora.length === 0,
+    `cortados=${JSON.stringify(pil390.cortados)} sobrepostos=${JSON.stringify(pil390.sobrepostos)} fora=${JSON.stringify(pil390.fora)}`)
 
   if (SHOTS) {
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })

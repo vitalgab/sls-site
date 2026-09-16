@@ -1,6 +1,9 @@
 // Servida do proprio site, nao de CDN de terceiro: a foto de fundo nao pode
 // depender de um host que sai do ar. Procedencia em public/assets/FONTES.md.
 const FAIXA_IMG = `${import.meta.env.BASE_URL}assets/faixa-familia.webp`
+// Os rotulos ficam em HTML, FORA da imagem: <text> dentro de SVG nao quebra
+// linha sozinho e, em 390px, "FOCO NO CLIENTE" saia da viewBox sem aviso.
+const TRIANGULO = `${import.meta.env.BASE_URL}assets/triangulo-pilares.svg`
 
 const pilares = [
   { n: '01', label: 'Confiança', desc: 'Transparência em cada indicação. Você sabe exatamente o que está contratando e por quê.' },
@@ -119,35 +122,18 @@ export default function Sobre() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <svg viewBox="0 0 320 300" width="320" height="300" xmlns="http://www.w3.org/2000/svg"
-                style={{ width: '100%', maxWidth: 320, height: 'auto' }}>
-                <defs>
-                  <linearGradient id="grad-navy" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#003A70" />
-                    <stop offset="100%" stopColor="#001C3D" />
-                  </linearGradient>
-                  <linearGradient id="grad-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#C9A84C" />
-                    <stop offset="100%" stopColor="#A6872F" />
-                  </linearGradient>
-                  <linearGradient id="grad-steel" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4B6A8A" />
-                    <stop offset="100%" stopColor="#2E4A6A" />
-                  </linearGradient>
-                </defs>
-                <polygon points="160,30 260,200 220,200 160,80 100,200 60,200" fill="url(#grad-navy)" />
-                <polygon points="60,200 160,200 140,230 80,230 100,200 60,200" fill="url(#grad-gold)" />
-                <polygon points="260,200 160,200 180,230 240,230 220,200 260,200" fill="url(#grad-steel)" />
-                <polygon points="160,80 140,115 180,115" fill="url(#grad-navy)" />
-                <polygon points="100,200 120,200 140,230 80,230" fill="url(#grad-gold)" />
-                <polygon points="220,200 200,200 180,230 240,230" fill="url(#grad-steel)" />
-                <text x="160" y="24" textAnchor="middle" fill="#003A70" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">CONFIANÇA</text>
-                <text x="36" y="240" textAnchor="middle" fill="#C9A84C" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">LONGO</text>
-                <text x="36" y="256" textAnchor="middle" fill="#C9A84C" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">PRAZO</text>
-                <text x="284" y="240" textAnchor="middle" fill="#4B6A8A" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">FOCO NO</text>
-                <text x="284" y="256" textAnchor="middle" fill="#4B6A8A" fontFamily="'Montserrat','Inter',sans-serif" fontWeight="600" fontSize="14" letterSpacing="1">CLIENTE</text>
-              </svg>
+            <div className="pilares-fig">
+              <div className="pilares-linha">
+                <span className="pilar-rotulo pilar-esq" style={{ color: '#4B6A8A' }}>Foco no cliente</span>
+                <img
+                  className="pilares-img"
+                  src={TRIANGULO}
+                  width="320" height="251"
+                  alt="Pilares Seu Legado Seguro: Confiança, Longo Prazo e Foco no Cliente"
+                />
+                <span className="pilar-rotulo pilar-dir" style={{ color: '#003A70' }}>Confiança</span>
+              </div>
+              <span className="pilar-rotulo pilar-base" style={{ color: '#A6872F' }}>Longo prazo</span>
             </div>
 
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: 8 }}>
@@ -205,6 +191,44 @@ export default function Sobre() {
             border-color: var(--navy) !important;
             box-shadow: var(--shadow-md);
             background: var(--white) !important;
+          }
+          /* Rotulo FORA da figura, nunca por cima: a linha e um flex de tres
+             colunas, entao o espaco do texto sai do espaco da imagem em vez de
+             cobri-la. Cada um alinhado a peca da sua cor — aco a esquerda,
+             navy a direita, dourado na base. */
+          .pilares-fig {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 14px; height: 100%;
+          }
+          .pilares-linha {
+            display: flex; align-items: center; justify-content: center;
+            gap: 14px; width: 100%;
+          }
+          .pilares-img {
+            flex: 0 1 320px; min-width: 0;
+            width: 100%; max-width: 320px; height: auto; display: block;
+          }
+          .pilar-rotulo {
+            font-family: var(--font-display);
+            font-weight: 600; font-size: 13px;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            line-height: 1.35; flex-shrink: 0;
+          }
+          /* A largura tem de caber "CONFIANCA" INTEIRA: e uma palavra so, nao
+             quebra linha, e max-width curto demais nao aperta — transborda. */
+          .pilar-esq { max-width: 92px; text-align: right; }
+          .pilar-dir { max-width: 92px; text-align: left; }
+          .pilar-base { text-align: center; }
+          @media (max-width: 560px) {
+            .pilares-linha { gap: 10px; }
+            .pilar-rotulo { font-size: 11px; letter-spacing: 0.6px; }
+            .pilar-esq, .pilar-dir { max-width: 76px; }
+          }
+          @media (max-width: 400px) {
+            .pilares-linha { gap: 8px; }
+            .pilar-rotulo { font-size: 10px; letter-spacing: 0.4px; }
+            .pilar-esq, .pilar-dir { max-width: 68px; }
           }
           /* background-attachment: fixed nao funciona no iOS — o Safari ignora e a
              foto sai esticada ou borrada. Abaixo de 768px vira scroll. */
