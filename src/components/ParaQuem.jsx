@@ -44,7 +44,7 @@ export default function ParaQuem() {
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
           <span className="section-eyebrow">Para quem é</span>
           <h2 className="section-title" style={{ margin: '0 auto 16px' }}>
-            Para quem constrói patrimônio,<br />carreira e legado
+            Para quem se preocupa com<br />família, carreira e legado
           </h2>
           <p className="section-sub" style={{ margin: '0 auto', textAlign: 'center' }}>
             Cada perfil tem necessidades diferentes. Nós entendemos isso — e encontramos a proteção certa para cada um.

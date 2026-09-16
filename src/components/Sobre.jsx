@@ -27,7 +27,7 @@ const diferenciais = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    title: 'Acompanha a cobertura de ponta a ponta',
+    title: 'Acompanhamento de ponta a ponta',
     desc: 'Nosso trabalho não termina na assinatura. Acompanhamos renovações, adequamos coberturas quando sua vida muda e avisamos antes de qualquer vencimento.',
   },
   {
@@ -146,7 +146,7 @@ export default function Sobre() {
                 margin: 0,
                 padding: 0,
               }}>
-                "Meu objetivo é que você e sua família tenham a tranquilidade que merecem — com a cobertura certa, pelo preço justo."
+                "Meu papel é estar lá antes de você precisar."
               </blockquote>
               <footer style={{
                 fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
