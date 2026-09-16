@@ -343,10 +343,21 @@ async function varrerPagina (page) {
       }
       return 'rgb(255, 255, 255)'
     }
-    const rgb = s => s.match(/\d+/g).slice(0, 3).map(Number)
+    // ATENCAO: getComputedStyle devolve "rgba(255,255,255,0.6)" para o card navy.
+    // Ler so os tres primeiros numeros compara BRANCO PURO contra o fundo e
+    // devolve 11,42:1 onde o valor real e 5,10:1 — o verificador mentia a favor.
+    // O alfa tem de ser composto sobre o fundo antes de medir.
+    const canal = s => { const m = s.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 } }
+    const compor = (frente, fundo) => {
+      const f = canal(frente), b = canal(fundo)
+      return { r: f.r * f.a + b.r * (1 - f.a), g: f.g * f.a + b.g * (1 - f.a), b: f.b * f.a + b.b * (1 - f.a), a: 1 }
+    }
     const lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
-    const lum = c => { const [r, g, b] = rgb(c); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) }
-    const razao = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
+    const lum = c => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b)
+    const razao = (frente, fundo) => {
+      const x = lum(compor(frente, fundo)), y = lum(canal(fundo))
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+    }
     return {
       definida: getComputedStyle(document.documentElement).getPropertyValue('--gray-500').trim(),
       itens: [...document.querySelectorAll('#produtos p')]
@@ -364,6 +375,12 @@ async function varrerPagina (page) {
   V('contraste do "dentre outras..." em fundo branco >= 4.5:1',
     sobreBranco.length > 0 && sobreBranco.every(i => i.contraste >= 4.5),
     sobreBranco.map(i => `${i.cor} sobre ${i.fundo} = ${i.contraste}:1`)[0] || 'nenhum')
+  // e o card navy tambem: la a cor nao vem de --gray-500, vem de um branco com
+  // alfa, e a composicao dava 4.00:1. Os DOIS ramos agora tem de passar em AA.
+  const sobreNavy = cinza.itens.filter(i => i.fundo !== 'rgb(255, 255, 255)')
+  V('contraste do "dentre outras..." no card navy >= 4.5:1',
+    sobreNavy.length === 1 && sobreNavy.every(i => i.contraste >= 4.5),
+    sobreNavy.map(i => `${i.cor} sobre ${i.fundo} = ${i.contraste}:1`)[0] || 'nenhum')
 
   // ---- 7. contatos ----
   const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp"]')].map(a => a.href))

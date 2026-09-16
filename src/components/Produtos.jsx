@@ -148,7 +148,7 @@ export default function Produtos() {
                 fontSize: 11,
                 fontStyle: 'italic',
                 marginBottom: 28,
-                color: p.featured ? 'rgba(255,255,255,0.5)' : 'var(--gray-500)',
+                color: p.featured ? 'rgba(255,255,255,0.6)' : 'var(--gray-500)',
               }}>
                 dentre outras...
               </p>
