@@ -27,7 +27,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
-  'impostor-cabecalho', 'impostor-impar',
+  'impostor-cabecalho', 'impostor-impar', 'impostor-herdada',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -118,6 +118,16 @@ async function abrir (w, h, opcoes = {}) {
   if (MODO === 'impostor-faixa') await page.route(/faixa-familia\.webp/, r => r.abort())
   // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
   if (MODO === 'impostor-logo') await page.route(/seguradoras\/unimed\.svg/, r => r.abort())
+  // Devolve fill="currentColor" ao SVG da Fairfax. Dentro de um <img> o SVG e um
+  // documento PROPRIO: currentColor nao herda cor nenhuma da pagina e resolve
+  // para o preto padrao dele. Foi exatamente o que aconteceu com a Azos, e o
+  // sintoma e um logo preto que ninguem estranha.
+  if (MODO === 'impostor-herdada') {
+    await page.route(/seguradoras\/fairfax\.svg/, async r => {
+      const t = mutar(await (await r.fetch()).text(), 'fill="#012AFF"', 'fill="currentColor"', 'cor da Fairfax')
+      await r.fulfill({ body: t, contentType: 'image/svg+xml' })
+    })
+  }
   if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
   // volta ao estado em que o azos.svg usava fill="currentColor", que dentro de
   // <img> nao herda cor e renderiza PRETO. O par cinza/verde tem de acusar.
@@ -580,6 +590,25 @@ async function medirLogoCabecalho (page) {
   // uma sozinha por construcao — nenhuma escolha de colunas conserta isso.
   const nParceiras = await page.evaluate(() => document.querySelectorAll('.seguradoras-grid > *').length)
   V('numero de parceiras e par', nParceiras % 2 === 0, `${nParceiras} parceiras`)
+
+  // Nenhum SVG de seguradora pode depender de currentColor. Dentro de um <img> o
+  // SVG e um documento PROPRIO: currentColor nao herda nada da pagina e resolve
+  // para o preto padrao dele. Foi o defeito da Azos, e o sintoma — um logo preto
+  // no meio de logos coloridos — nao chama atencao de ninguem.
+  const svgsCor = await page.evaluate(async () => {
+    const urls = [...new Set([...document.querySelectorAll('.seguradoras-grid img')]
+      .map(i => i.getAttribute('src')).filter(u => u.endsWith('.svg')))]
+    const ruins = []
+    for (const u of urls) {
+      try {
+        const t = await (await fetch(u)).text()
+        if (/currentColor/i.test(t)) ruins.push(u.split('/').pop())
+      } catch { ruins.push(u.split('/').pop() + '(nao baixou)') }
+    }
+    return { n: urls.length, ruins }
+  })
+  V('nenhum logo de seguradora depende de currentColor', svgsCor.n > 0 && svgsCor.ruins.length === 0,
+    `${svgsCor.n} SVGs conferidos` + (svgsCor.ruins.length ? ` | COM currentColor: ${JSON.stringify(svgsCor.ruins)}` : ''))
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.waitForTimeout(280)
 

@@ -22,7 +22,7 @@ Para conferir ou atualizar qualquer um: abra a URL de origem e baixe de novo.
 | `seguros-unimed.png` | Seguros Unimed | https://midias.segurosunimed.com.br/content/logo.png<br>declarado como `logo` no JSON-LD de segurosunimed.com.br | logo da própria empresa |
 | `mapfre.svg` | Mapfre | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_Mapfre_2026.svg)<br>arquivo: File:Logo Mapfre 2026.svg | Public domain |
 | `qualicorp.png` | Qualicorp | https://www.qualicorp.com.br/wp-content/uploads/2024/10/logoQuali.png<br>não há SVG no site; PNG transparente 263x96 | logo da própria empresa |
-| `fairfax.svg` | Fairfax | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3ALogo_Fairfax_Financial.svg)<br>arquivo: File:Logo Fairfax Financial.svg | Public domain |
+| `fairfax.svg` | Fairfax BR Seguros | [www.fairfax.com.br](https://www.fairfax.com.br/)<br>SVG embutido no cabeçalho da página inicial | © Fairfax BR Seguros, uso como marca de parceira |
 | `coris.svg` | Coris Seguro Viagem | https://www.coris.com.br/icons/logo-footer.svg | logo da própria empresa |
 | `ademicon.svg` | Ademicon | https://www.ademicon.com.br/api/media/file/ademicon.svg | logo da própria empresa |
 | `allianz.svg` | Allianz | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File%3AAllianz_logo.svg)<br>arquivo: File:Allianz logo.svg | Public domain |
@@ -92,3 +92,24 @@ Hapvida, que já aparece aqui, e o site da NotreDame (`gndi.com.br`) hoje serve 
 logo da Hapvida — o `alt` do cabeçalho de lá diz "Logo Hapvida SP/RJ".
 
 _Levantado em 2026-09-16._
+
+### O logo da Fairfax veio do cabeçalho, e o cabeçalho é SVG embutido
+
+Não há arquivo para baixar: a marca está inline no HTML de
+`https://www.fairfax.com.br/`, com as cores em classes do Tailwind e todo
+`fill="currentColor"`. Dentro de um `<img>`, `currentColor` não herda cor
+nenhuma — o SVG é um documento próprio — então as classes foram resolvidas
+contra a folha do site e as cores gravadas no arquivo:
+
+- `.fill-neutral-black{fill:#000}` → os chevrons `»` e a linha "A FAIRFAX
+  Company", 12 paths
+- `.fill-current` com o contêiner em `!text-[#012AFF]` → o "FF" e a palavra
+  "Seguros", 9 paths
+
+Os 21 `d=` foram copiados sem tocar. SHA-256 deles, unidos por `|`, na ordem:
+
+    124dcd60f4acef1b86bfed8253d7be557049589ac5f55d10ac08bf9965cc57c7
+
+O que estava aqui antes era o wordmark da **Fairfax Financial Holdings**, a
+holding canadense, tirado do Wikimedia. A parceira é a **Fairfax BR Seguros**,
+e a marca dela é outra.
