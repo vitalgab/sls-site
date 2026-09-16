@@ -25,7 +25,7 @@ const MODO = process.env.MODO || 'real'
 
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
-  'impostor-gray', 'impostor-pwa']
+  'impostor-gray', 'impostor-pwa', 'impostor-azos']
 if (!MODOS.includes(MODO)) { console.error(`modo desconhecido: ${MODO}`); process.exit(3) }
 
 let ok = 0, bad = 0
@@ -76,6 +76,15 @@ async function abrir (w, h) {
   // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
   if (MODO === 'impostor-logo') await page.route(/seguradoras\/unimed\.svg/, r => r.abort())
   if (MODO === 'impostor-manifest') await page.route(/manifest\.json/, r => r.fulfill({ status: 404, body: '' }))
+  // volta ao estado em que o azos.svg usava fill="currentColor", que dentro de
+  // <img> nao herda cor e renderiza PRETO. O par cinza/verde tem de acusar.
+  if (MODO === 'impostor-azos') {
+    await page.route(/seguradoras\/azos\.svg/, async r => {
+      let t = await (await r.fetch()).text()
+      t = mutar(t, 'fill="#00B000"', 'fill="currentColor"', 'cor da marca da Azos')
+      await r.fulfill({ body: t, contentType: 'image/svg+xml' })
+    })
+  }
   // volta ao estado anterior: manifest e icones publicados, mas o index.html sem
   // anuncia-los. O impostor-manifest derruba o ARQUIVO; este derruba o ANUNCIO,
   // que e coisa diferente e precisava da propria prova.
@@ -294,6 +303,51 @@ async function varrerPagina (page) {
   V('formato: SVG, salvo os dois PNG conhecidos',
     bitmaps.every(b => PNG_ACEITOS.includes(b)) && bitmaps.length <= PNG_ACEITOS.length,
     `${seg.imgs.length - bitmaps.length} SVG + PNG: ${bitmaps.join(', ') || 'nenhum'}`)
+
+  // ---- a Azos, no hover, tem de ficar VERDE ----
+  // O arquivo dela vinha com fill="currentColor", e currentColor dentro de <img>
+  // NAO herda a cor da pagina — renderizava preto. Os cartoes sao cinza por
+  // padrao (filter: grayscale) e coloridos no hover, entao a prova e um PAR:
+  // cinza antes, verde depois. So a segunda metade deixaria passar um logo que
+  // ja fosse verde sem o hover funcionar.
+  const corDominante = async (el) => {
+    const png = (await el.screenshot()).toString('base64')
+    return page.evaluate(async d => {
+      const im = await new Promise((res, rej) => {
+        const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'data:image/png;base64,' + d
+      })
+      const c = document.createElement('canvas')
+      c.width = im.width; c.height = im.height
+      const g = c.getContext('2d', { willReadFrequently: true })
+      g.drawImage(im, 0, 0)
+      const px = g.getImageData(0, 0, im.width, im.height).data
+      let r = 0, vd = 0, b = 0, n = 0
+      for (let i = 0; i < px.length; i += 4) {
+        const mx = Math.max(px[i], px[i + 1], px[i + 2]), mn = Math.min(px[i], px[i + 1], px[i + 2])
+        if (mx > 240 && mn > 240) continue          // fundo branco do cartao
+        r += px[i]; vd += px[i + 1]; b += px[i + 2]; n++
+      }
+      return n ? { r: Math.round(r / n), g: Math.round(vd / n), b: Math.round(b / n), n } : null
+    }, png)
+  }
+  const cartaoAzos = page.locator('.seguradoras-grid .seg-card').filter({ has: page.locator('img[alt="Azos"]') })
+  V('cartao da Azos encontrado', await cartaoAzos.count() === 1, `${await cartaoAzos.count()}`)
+  if (await cartaoAzos.count() === 1) {
+    const imgAzos = cartaoAzos.locator('img')
+    await cartaoAzos.scrollIntoViewIfNeeded()
+    await page.mouse.move(0, 0)
+    await page.waitForTimeout(400)
+    const antes = await corDominante(imgAzos)
+    await cartaoAzos.hover()
+    await page.waitForTimeout(700)
+    const depois = await corDominante(imgAzos)
+    V('logo da Azos e cinza sem hover', antes && Math.abs(antes.r - antes.g) <= 6 && Math.abs(antes.g - antes.b) <= 6,
+      antes ? `rgb(${antes.r},${antes.g},${antes.b}) em ${antes.n}px` : 'sem pixels')
+    V('logo da Azos fica VERDE no hover (G dominante)',
+      depois && depois.g > depois.r + 20 && depois.g > depois.b + 20,
+      depois ? `rgb(${depois.r},${depois.g},${depois.b}) em ${depois.n}px` : 'sem pixels')
+    await page.mouse.move(0, 0)
+  }
   // altura uniforme: nenhum passa do teto, e nenhum vira fiapo
   const alturas = seg.imgs.map(i => i.alt_alt)
   V('altura dos logos entre 14 e 42 px (teto uniforme)',

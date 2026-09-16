@@ -83,7 +83,7 @@ jobs:
           falhou=0
           for m in impostor-css impostor-rede impostor-wa impostor-em \
                    impostor-missao impostor-persona impostor-manifest impostor-logo \
-                   impostor-gray impostor-pwa; do
+                   impostor-gray impostor-pwa impostor-azos; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
             if [ "$cod" -eq 0 ]; then

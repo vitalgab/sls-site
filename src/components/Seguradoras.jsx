@@ -18,7 +18,7 @@ const parceiras = [
   { nome: 'Amil', logo: 'seguradoras/amil.svg' },
   { nome: 'Unimed', logo: 'seguradoras/unimed.svg' },
   { nome: 'Hapvida', logo: 'seguradoras/hapvida.svg' },
-  { nome: 'Azos', logo: 'seguradoras/azos.svg', cor: '#0A0A0A' },
+  { nome: 'Azos', logo: 'seguradoras/azos.svg' },
   { nome: 'MAG Seguros', logo: 'seguradoras/mag-seguros.svg' },
   { nome: 'Icatu Seguros', logo: 'seguradoras/icatu.svg' },
   { nome: 'Zurich', logo: 'seguradoras/zurich.svg' },
@@ -47,10 +47,13 @@ function CartaoSeguradora({ p }) {
       cursor: 'default',
       minHeight: 90,
     }}>
+      {/* O `color` daqui nao pinta mais nada: existia para o azos.svg, que vinha
+          com fill="currentColor" — e currentColor dentro de <img> NAO herda a
+          cor da pagina, entao renderizava preto. O SVG agora traz a cor da
+          marca no proprio arquivo, como os outros. */}
       <div className="seg-logo-wrap" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: '100%', height: 48,
-        color: p.cor || 'var(--navy)',
       }}>
         {p.logo ? (
           <img
