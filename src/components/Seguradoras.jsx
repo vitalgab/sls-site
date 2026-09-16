@@ -3,10 +3,10 @@
 //
 // Todas têm logo oficial. Nenhum foi redesenhado nem gerado.
 //
-// Omint e Akad Seguros ficaram de fora: os dois domínios respondem HTTP 403 (é
-// o WAF dos próprios sites, não o proxy — os alternativos que respondem são de
-// outra empresa ou só um stub). Melhor uma parceira ausente do que um logo
-// errado ou inventado. Detalhes em FONTES.md.
+// Omint e Akad entraram por último, e por um caminho diferente: os dois domínios
+// respondem HTTP 403 ao proxy desta sessão (é o WAF deles), então os arquivos
+// vieram do Gabriel, que os pegou no navegador dele. Procedência e conferência
+// em FONTES.md.
 //
 // A NotreDame Intermédica saiu da lista: a marca foi incorporada pela Hapvida,
 // que já tem card próprio aqui, e o site da NotreDame hoje serve o logo da
@@ -30,6 +30,8 @@ const parceiras = [
   { nome: 'Fairfax', logo: 'seguradoras/fairfax.svg' },
   { nome: 'Coris Seguro Viagem', logo: 'seguradoras/coris.svg' },
   { nome: 'Ademicon', logo: 'seguradoras/ademicon.svg' },
+  { nome: 'Akad Seguros', logo: 'seguradoras/akad.svg' },
+  { nome: 'Omint', logo: 'seguradoras/omint.png' },
 ]
 
 function CartaoSeguradora({ p }) {

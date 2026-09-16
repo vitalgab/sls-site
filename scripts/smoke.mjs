@@ -849,9 +849,11 @@ async function medirLogoCabecalho (page) {
     seg.imgs.map(i => i.alt).join(' · '))
   // SVG onde existe SVG. Duas marcas so publicam PNG transparente, e sao estas
   // duas — se outra virar bitmap, ou se um .jpg entrar, isto morde.
-  const PNG_ACEITOS = ['qualicorp.png', 'seguros-unimed.png']
+  // A lista e nominal: um .jpg novo, ou um SVG que virou bitmap, morde. A Omint
+  // entra aqui porque o site dela nao publica SVG — o que veio foi PNG.
+  const PNG_ACEITOS = ['qualicorp.png', 'seguros-unimed.png', 'omint.png']
   const bitmaps = seg.imgs.filter(i => !i.src.endsWith('.svg')).map(i => i.src.split('/').pop())
-  V('formato: SVG, salvo os dois PNG conhecidos',
+  V('formato: SVG, salvo os PNG conhecidos',
     bitmaps.every(b => PNG_ACEITOS.includes(b)) && bitmaps.length <= PNG_ACEITOS.length,
     `${seg.imgs.length - bitmaps.length} SVG + PNG: ${bitmaps.join(', ') || 'nenhum'}`)
 

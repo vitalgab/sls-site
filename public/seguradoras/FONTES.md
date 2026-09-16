@@ -113,3 +113,23 @@ Os 21 `d=` foram copiados sem tocar. SHA-256 deles, unidos por `|`, na ordem:
 O que estava aqui antes era o wordmark da **Fairfax Financial Holdings**, a
 holding canadense, tirado do Wikimedia. A parceira é a **Fairfax BR Seguros**,
 e a marca dela é outra.
+
+## Akad e Omint — os dois que faltavam
+
+Os domínios das duas respondem **HTTP 403** ao proxy desta sessão. Não é o
+proxy: é o WAF dos próprios sites, e já era assim quando a seção foi montada.
+Os arquivos vieram do Gabriel, que os abriu no navegador dele.
+
+| arquivo | o que é | origem declarada | conferência feita aqui |
+|---|---|---|---|
+| `akad.svg` | logo Akad Seguros | cabeçalho de `akadseguros.com.br`, SVG embutido | `viewBox="0 0 181 76"`, um único `fill="#E8266B"` (a cor renderizada lá), **zero** `currentColor`, zero `<script>`, zero `href` externo, zero `<image>`, zero `<foreignObject>`, zero handler `on*` |
+| `omint.png` | logo Omint | `omint.com.br` | 6 cores nos pixels opacos, e as **duas** primeiras cobrem 99,99% — `rgb(0,36,117)` e `rgb(127,145,186)`. Borda com alfa parcial = 1,38% da tinta |
+
+Sobre a Omint: o arquivo que chegou tem 4096x4096 com a tinta em 2874x786. A URL
+oficial do briefing
+(`/wp-content/themes/OmintPortal360/assets/images/login/logo.png`) continua em
+403, então **não deu para comparar com o original byte a byte**. O que dá para
+afirmar é o que a medição mostra: duas cores chapadas, borda de 1,4% e arestas
+limpas — assinatura de exportação de vetor, não de redesenho nem de upscale por
+IA, que deixariam dezenas de cores na transição. O arquivo aqui foi recortado na
+tinta e reduzido para 900x246, 35 kB; nada foi redesenhado.
