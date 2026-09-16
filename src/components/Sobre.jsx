@@ -24,7 +24,7 @@ const diferenciais = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    title: 'Cuida da apólice pelo ciclo de vida',
+    title: 'Acompanha a cobertura de ponta a ponta',
     desc: 'Nosso trabalho não termina na assinatura. Acompanhamos renovações, adequamos coberturas quando sua vida muda e avisamos antes de qualquer vencimento.',
   },
   {
