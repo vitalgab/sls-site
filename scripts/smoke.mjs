@@ -128,11 +128,13 @@ async function abrir (w, h) {
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
       } else if (MODO === 'impostor-pilares') {
-        // duas regras, dois tamanhos: so a de 92px deixaria a assercao de 390px
-        // VERDE sob o impostor — negativo que nao cobre a largura medida nao e
-        // controle nenhum.
-        t = mutar(t, 'max-width: 92px', 'max-width: 24px', 'largura dos rotulos (desktop)')
-        t = mutar(t, 'max-width: 68px', 'max-width: 24px', 'largura dos rotulos (mobile)')
+        // A figura passa a poder crescer sem limite: ela empurra os rotulos para
+        // fora da coluna, e e a mesma mutacao que morde nas DUAS larguras
+        // medidas — negativo que so cobre uma delas nao e controle nenhum.
+        // tira o rotulo da base da coluna da imagem: ele para debaixo do rotulo
+        // da esquerda. Morde nas DUAS larguras medidas — negativo que so cobre
+        // uma delas nao e controle nenhum.
+        t = mutar(t, 'grid-area: 2 / 2;', 'grid-area: 2 / 1;', 'coluna do rotulo da base')
       } else if (MODO === 'impostor-overlay') {
         t = mutar(t, 'linear-gradient(0deg, rgba(0,15,40,0.82) 0%, rgba(0,15,40,0.65) 100%)',
           'linear-gradient(0deg, rgba(0,15,40,0) 0%, rgba(0,15,40,0) 100%)', 'overlay da faixa')
@@ -238,6 +240,13 @@ async function medirPilares (page) {
       img: true,
       src: img.getAttribute('src'),
       natural: img.naturalWidth,
+      // "alinhado a peca da sua cor" e uma afirmacao de POSICAO, e e a unica
+      // parte disto que uma folha de estilo consegue inverter sem quebrar mais
+      // nada — por isso ela e o alvo do impostor.
+      esqAEsquerda: cai(rot[0]).x + cai(rot[0]).w <= ci.x + 1,
+      dirADireita: cai(rot[1]).x >= ci.x + ci.w - 1,
+      baseAbaixo: cai(rot[2]).y >= ci.y + ci.h - 1,
+      baseCentrada: Math.abs((cai(rot[2]).x + cai(rot[2]).w / 2) - (ci.x + ci.w / 2)) <= 4,
       cortados: rot.filter(e => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)
         .map(e => `${e.textContent}(${e.scrollWidth}>${e.clientWidth})`),
       sobrepostos: rot.filter(e => bate(cai(e), ci)).map(e => e.textContent),
@@ -339,6 +348,9 @@ async function medirPilares (page) {
     V('rotulos dos pilares nao cortam nem sobrepoem a figura em 1440px',
       pil.cortados.length === 0 && pil.sobrepostos.length === 0 && pil.fora.length === 0,
       `cortados=${JSON.stringify(pil.cortados)} sobrepostos=${JSON.stringify(pil.sobrepostos)} fora=${JSON.stringify(pil.fora)}`)
+    V('cada rotulo do lado da sua peca em 1440px',
+      pil.esqAEsquerda && pil.dirADireita && pil.baseAbaixo && pil.baseCentrada,
+      `esq=${pil.esqAEsquerda} dir=${pil.dirADireita} base=${pil.baseAbaixo} centrada=${pil.baseCentrada}`)
   }
   V('zero elementos com fonte serifada', sweep.ruins.length === 0, sweep.ruins.length ? JSON.stringify(sweep.ruins.slice(0, 3)) : `0 de ${sweep.varridos}`)
 
@@ -749,6 +761,9 @@ async function medirPilares (page) {
   V('rotulos dos pilares nao cortam nem sobrepoem a figura em 390px',
     pil390.cortados.length === 0 && pil390.sobrepostos.length === 0 && pil390.fora.length === 0,
     `cortados=${JSON.stringify(pil390.cortados)} sobrepostos=${JSON.stringify(pil390.sobrepostos)} fora=${JSON.stringify(pil390.fora)}`)
+  V('cada rotulo do lado da sua peca em 390px',
+    pil390.esqAEsquerda && pil390.dirADireita && pil390.baseAbaixo && pil390.baseCentrada,
+    `esq=${pil390.esqAEsquerda} dir=${pil390.dirADireita} base=${pil390.baseAbaixo} centrada=${pil390.baseCentrada}`)
 
   if (SHOTS) {
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })

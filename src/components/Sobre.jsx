@@ -123,16 +123,14 @@ export default function Sobre() {
             </div>
 
             <div className="pilares-fig">
-              <div className="pilares-linha">
-                <span className="pilar-rotulo pilar-esq" style={{ color: '#4B6A8A' }}>Foco no cliente</span>
-                <img
-                  className="pilares-img"
-                  src={TRIANGULO}
-                  width="320" height="251"
-                  alt="Pilares Seu Legado Seguro: Confiança, Longo Prazo e Foco no Cliente"
-                />
-                <span className="pilar-rotulo pilar-dir" style={{ color: '#003A70' }}>Confiança</span>
-              </div>
+              <span className="pilar-rotulo pilar-esq" style={{ color: '#4B6A8A' }}>Foco no<br />cliente</span>
+              <img
+                className="pilares-img"
+                src={TRIANGULO}
+                width="320" height="251"
+                alt="Pilares Seu Legado Seguro: Confiança, Longo Prazo e Foco no Cliente"
+              />
+              <span className="pilar-rotulo pilar-dir" style={{ color: '#003A70' }}>Confiança</span>
               <span className="pilar-rotulo pilar-base" style={{ color: '#A6872F' }}>Longo prazo</span>
             </div>
 
@@ -192,43 +190,48 @@ export default function Sobre() {
             box-shadow: var(--shadow-md);
             background: var(--white) !important;
           }
-          /* Rotulo FORA da figura, nunca por cima: a linha e um flex de tres
-             colunas, entao o espaco do texto sai do espaco da imagem em vez de
-             cobri-la. Cada um alinhado a peca da sua cor — aco a esquerda,
-             navy a direita, dourado na base. */
+          /* Rotulo FORA da figura, nunca por cima. Grade de tres colunas: o
+             texto ocupa coluna propria, entao o espaco dele sai do espaco da
+             imagem em vez de cobri-la — sobrepor virou impossivel por
+             construcao, nao por ajuste de coordenada.
+             O rotulo da base fica na MESMA COLUNA da imagem (linha 2), e e
+             assim que ele nasce centrado NELA. Centrar na figura inteira nao
+             serve: os rotulos laterais tem larguras diferentes e puxariam o
+             centro para o lado. */
           .pilares-fig {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 14px; height: 100%;
-          }
-          .pilares-linha {
-            display: flex; align-items: center; justify-content: center;
-            gap: 14px; width: 100%;
+            display: grid;
+            grid-template-columns: auto auto auto;
+            align-items: center; justify-items: center;
+            align-content: center;
+            column-gap: 14px; row-gap: 14px;
+            height: 100%;
           }
           .pilares-img {
-            flex: 0 1 320px; min-width: 0;
+            grid-area: 1 / 2;
             width: 100%; max-width: 320px; height: auto; display: block;
           }
           .pilar-rotulo {
             font-family: var(--font-display);
             font-weight: 600; font-size: 13px;
             letter-spacing: 1.2px; text-transform: uppercase;
-            line-height: 1.35; flex-shrink: 0;
+            line-height: 1.35; white-space: nowrap;
           }
-          /* A largura tem de caber "CONFIANCA" INTEIRA: e uma palavra so, nao
-             quebra linha, e max-width curto demais nao aperta — transborda. */
-          .pilar-esq { max-width: 92px; text-align: right; }
-          .pilar-dir { max-width: 92px; text-align: left; }
-          .pilar-base { text-align: center; }
+          /* Sem max-width, de proposito: a caixa se dimensiona pelo TEXTO e a
+             quebra de "FOCO NO / CLIENTE" e explicita no JSX, entao transbordar
+             virou impossivel. A versao anterior capava em 92px, medido aqui: no
+             runner do CI a mesma palavra renderizou 94px e cortou. Largura de
+             texto e propriedade do RENDERIZADOR — numero cravado a mao contra
+             uma maquina so nao sobrevive a outra. */
+          .pilar-esq { grid-area: 1 / 1; justify-self: end; text-align: right; }
+          .pilar-dir { grid-area: 1 / 3; justify-self: start; text-align: left; }
+          .pilar-base { grid-area: 2 / 2; text-align: center; }
           @media (max-width: 560px) {
-            .pilares-linha { gap: 10px; }
+            .pilares-fig { column-gap: 10px; }
             .pilar-rotulo { font-size: 11px; letter-spacing: 0.6px; }
-            .pilar-esq, .pilar-dir { max-width: 76px; }
           }
           @media (max-width: 400px) {
-            .pilares-linha { gap: 8px; }
+            .pilares-fig { column-gap: 8px; }
             .pilar-rotulo { font-size: 10px; letter-spacing: 0.4px; }
-            .pilar-esq, .pilar-dir { max-width: 68px; }
           }
           /* background-attachment: fixed nao funciona no iOS — o Safari ignora e a
              foto sai esticada ou borrada. Abaixo de 768px vira scroll. */
