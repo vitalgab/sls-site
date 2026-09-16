@@ -126,7 +126,8 @@ export default function Sobre() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <svg viewBox="0 0 320 300" width="320" height="300" xmlns="http://www.w3.org/2000/svg">
+              <svg viewBox="0 0 320 300" width="320" height="300" xmlns="http://www.w3.org/2000/svg"
+                style={{ width: '100%', maxWidth: 320, height: 'auto' }}>
                 <defs>
                   <linearGradient id="grad-navy" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#003A70" />

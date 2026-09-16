@@ -355,24 +355,34 @@ async function varrerPagina (page) {
   await page.evaluate(() => document.fonts.ready.then(() => 0))
   await varrerPagina(page)
 
-  // O que estava publicado transbordava 36px aqui (scrollWidth 426): a grade de
-  // seguradoras ia a 3 colunas abaixo de 560px e 3x126px + gaps nao cabiam em
-  // 350px de area util. Agora a grade e auto-fit/minmax e o transbordo acabou,
-  // entao a assercao e IGUALDADE, sem folga herdada.
-  const ov = await page.evaluate(() => {
+  // O que estava publicado transbordava 36px em qualquer largura estreita
+  // (scrollWidth 426 em 320, 360 e 390). Agora a assercao e IGUALDADE, sem folga
+  // herdada, e em TRES larguras: 390 era o requisito, mas o hero so aparecia em
+  // 320 — largura unica teria deixado o defeito passar.
+  const medirTransbordo = async () => page.evaluate(() => {
     const vw = document.documentElement.clientWidth
     const culpados = []
     for (const el of document.querySelectorAll('*')) {
       const b = el.getBoundingClientRect()
       if (b.width === 0) continue
-      if (b.left + b.width + window.scrollX > vw + 1) culpados.push(el.closest('.seguradoras-grid') ? 'seguradoras' : `${el.tagName.toLowerCase()}:${(el.textContent || '').trim().slice(0, 20)}`)
+      if (b.left + b.width + window.scrollX > vw + 1) {
+        culpados.push(el.closest('.seguradoras-grid') ? 'seguradoras'
+          : el.closest('.hero-grid') ? `hero:${el.tagName.toLowerCase()}`
+          : `${el.tagName.toLowerCase()}:${(el.textContent || '').trim().slice(0, 20)}`)
+      }
     }
     return { doc: document.documentElement.scrollWidth, vis: vw, culpados }
   })
-  V('sem rolagem horizontal em 390px', ov.doc === ov.vis,
-    `scrollWidth=${ov.doc} clientWidth=${ov.vis}`)
-  V('nenhum elemento ultrapassa a borda em 390px', ov.culpados.length === 0,
-    ov.culpados.length ? JSON.stringify([...new Set(ov.culpados)].slice(0, 4)) : '0 elementos')
+  for (const larg of [320, 360, 390]) {
+    await page.setViewportSize({ width: larg, height: 844 })
+    await page.waitForTimeout(350)
+    const o = await medirTransbordo()
+    V(`sem rolagem horizontal em ${larg}px`, o.doc === o.vis, `scrollWidth=${o.doc} clientWidth=${o.vis}`)
+    V(`nenhum elemento ultrapassa a borda em ${larg}px`, o.culpados.length === 0,
+      o.culpados.length ? JSON.stringify([...new Set(o.culpados)].slice(0, 4)) : '0 elementos')
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.waitForTimeout(350)
 
   const h1 = await page.evaluate(() => {
     const el = document.querySelector('#inicio h1'); const r = el.getBoundingClientRect()

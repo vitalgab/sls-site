@@ -215,7 +215,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div style={{
+        <div className="hero-form-card" style={{
           background: '#ffffff',
           borderRadius: 20,
           padding: '32px 28px',
@@ -231,6 +231,16 @@ export default function Hero() {
             grid-template-columns: 1fr !important;
             gap: 40px !important;
           }
+        }
+        /* Em 320px a pagina transbordava 20px, e a culpa era daqui, nao da grade
+           de seguradoras: o min-content de .hero-grid media 349px = 56 de padding
+           inline + 293 do cartao do formulario, e os 293 vinham do botao "Enviar
+           pelo WhatsApp", que herda white-space: nowrap de .btn-primary e nao
+           quebra. Os tres !important sao para vencer o padding inline. */
+        @media (max-width: 560px) {
+          .hero-grid { padding: 60px 20px !important; }
+          .hero-form-card { padding: 28px 20px !important; }
+          .hero-form-card .btn-primary { white-space: normal !important; }
         }
       `}</style>
     </section>
