@@ -1,4 +1,4 @@
-const WA_NUMBER = '5571999999999'
+const WA_NUMBER = '5571981018556'
 
 const produtos = [
   {

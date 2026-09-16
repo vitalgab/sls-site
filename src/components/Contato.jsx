@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const WA_NUMBER = '5571999999999'
+const WA_NUMBER = '5571981018556'
 
 export default function Contato() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', interesse: '', mensagem: '' })
@@ -99,7 +99,7 @@ export default function Contato() {
               {[
                 { name: 'nome', label: 'Nome completo', type: 'text', placeholder: 'Dr. João Silva', required: true },
                 { name: 'email', label: 'E-mail', type: 'email', placeholder: 'joao@exemplo.com', required: false },
-                { name: 'telefone', label: 'Telefone / WhatsApp', type: 'tel', placeholder: '(71) 99999-9999', required: true },
+                { name: 'telefone', label: 'Telefone / WhatsApp', type: 'tel', placeholder: '(71) 91234-5678', required: true },
               ].map(f => (
                 <div key={f.name}>
                   <label style={{

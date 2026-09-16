@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const WA_NUMBER = '5571999999999'
+const WA_NUMBER = '5571981018556'
 
 const slides = [
   { url: 'https://images.unsplash.com/photo-1484665754804-74b091211472?w=1440&q=90&fit=crop&auto=format', alt: 'Família feliz' },

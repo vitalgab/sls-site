@@ -22,7 +22,7 @@ export default function App() {
 
       {/* WhatsApp flutuante */}
       <a
-        href="https://wa.me/5571999999999"
+        href="https://wa.me/5571981018556"
         target="_blank"
         rel="noopener"
         title="Falar pelo WhatsApp"
