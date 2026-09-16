@@ -26,7 +26,7 @@ const MODO = process.env.MODO || 'real'
 const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor-em',
   'impostor-missao', 'impostor-persona', 'impostor-manifest', 'impostor-logo',
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
-  'impostor-overlay', 'impostor-pilares',
+  'impostor-overlay', 'impostor-pilares', 'impostor-grade',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -122,7 +122,8 @@ async function abrir (w, h) {
       await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
-  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares', 'estresse'].includes(MODO)) {
+  if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
+    'impostor-grade', 'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-wa') {
@@ -131,6 +132,13 @@ async function abrir (w, h) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-grade') {
+        // 3 nao divide 4: o quarto cartao fica sozinho na segunda linha, que e
+        // exatamente o defeito que a assercao existe para pegar.
+        // o `gap:24` desambigua: ha tres grades de 4 colunas no bundle, e mutar
+        // as tres mexeria em secao que nenhuma assercao daqui observa.
+        t = mutar(t, 'gridTemplateColumns:`repeat(4, 1fr)`,gap:24',
+          'gridTemplateColumns:`repeat(3, 1fr)`,gap:24', 'colunas da grade de "Para quem"')
       } else if (MODO === 'estresse') {
         // ESTRESSE_PX existe para PROVAR que este modo esta ligado nas
         // assercoes: com +1px tudo fica verde (e a folga encolhe, medida), com
@@ -449,11 +457,40 @@ async function medirPilares (page) {
   // ---- 6. personas e PWA ----
   const personas = await page.evaluate(() => [...document.querySelectorAll('img[src*="persona-"]')]
     .map(i => ({ src: i.getAttribute('src'), nw: i.naturalWidth, nh: i.naturalHeight })))
-  V('tres personas no DOM', personas.length === 3, `${personas.length}: ${personas.map(p => p.src.split('/').pop()).join(', ')}`)
-  V('as tres personas sao WebP com alfa', personas.every(p => p.src.endsWith('.webp')),
+  const N_PERSONAS = 4
+  V(`${N_PERSONAS} personas no DOM`, personas.length === N_PERSONAS, `${personas.length}: ${personas.map(p => p.src.split('/').pop()).join(', ')}`)
+  V('toda persona e WebP com alfa', personas.length > 0 && personas.every(p => p.src.endsWith('.webp')),
     personas.map(p => p.src.split('/').pop()).join(', '))
-  V('as tres personas carregaram (naturalWidth > 0)', personas.length === 3 && personas.every(p => p.nw > 0),
+  V('toda persona carregou (naturalWidth > 0)', personas.length === N_PERSONAS && personas.every(p => p.nw > 0),
     personas.map(p => `${p.nw}x${p.nh}`).join(' | '))
+  V('a persona CLT esta entre elas', personas.some(p => p.src.includes('persona-clt.webp')),
+    personas.map(p => p.src.split('/').pop()).join(', '))
+
+  // Cartao solto numa ultima linha pela metade e o defeito que esta grade tem de
+  // nao ter. A propriedade travada e "o numero de colunas DIVIDE o numero de
+  // cartoes", em cada largura — nao um numero de colunas cravado.
+  for (const larg of [1440, 1200, 1024, 900, 768, 390, 320]) {
+    await page.setViewportSize({ width: larg, height: 900 })
+    await page.waitForTimeout(260)
+    const g = await page.evaluate(() => {
+      const el = document.querySelector('.paraquem-grid')
+      if (!el) return null
+      const cols = getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length
+      const cards = el.children.length
+      const linhas = new Set([...el.children].map(c => Math.round(c.getBoundingClientRect().top)))
+      const ultima = Math.max(...[...linhas]).toFixed(0)
+      const naUltima = [...el.children].filter(c => Math.round(c.getBoundingClientRect().top) === Number(ultima)).length
+      return { cols, cards, linhas: linhas.size, naUltima,
+        rolagem: document.documentElement.scrollWidth <= document.documentElement.clientWidth }
+    })
+    if (!g) { console.error('INSTRUMENTO: .paraquem-grid nao existe'); process.exit(3) }
+    V(`grade de "Para quem" sem cartao solto em ${larg}px`,
+      g.cards % g.cols === 0 && g.naUltima === g.cols,
+      `${g.cards} cartoes em ${g.cols} coluna(s), ${g.linhas} linha(s), ${g.naUltima} na ultima`)
+    V(`sem rolagem lateral com 4 personas em ${larg}px`, g.rolagem === true, g.rolagem ? 'ok' : 'HORIZONTAL')
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.waitForTimeout(260)
 
   // o fundo da foto passou a ser CSS: se voltar a ser cor crua no JSX, morde
   const fundoFoto = await page.evaluate(() => {
