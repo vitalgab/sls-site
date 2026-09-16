@@ -16,6 +16,7 @@
  * proposito — a paridade so vale contra o commit da reconstrucao (e8b865f).
  */
 import { chromium } from 'playwright'
+import { existsSync } from 'node:fs'
 import fs from 'node:fs'
 
 const AR = 'http://127.0.0.1:8101/sls-site/'
@@ -47,10 +48,17 @@ const PISO = { hero: 300, 'para-quem': 600, produtos: 1200, seguradoras: 200,
 const ESTILOS = ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'color', 'backgroundColor',
   'letterSpacing', 'lineHeight', 'textAlign', 'paddingTop', 'paddingBottom', 'borderRadius', 'display']
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--ignore-certificate-errors-spki-list=KnP1OnzHv/y42eRQmbGwoYTHcSJF448m6CU5mdngwKk=,PS48cX347wDVcRynzq+DFqswl2PLNE1sG6uQvxMCOS0='],
-})
+// O Chromium e a CA mudam conforme onde isto roda. Em CI o Playwright resolve o
+// binario sozinho; num ambiente atras de proxy que reemite TLS, o binario vem
+// pronto em /opt/pw-browsers e e preciso confiar na CA do proxy — e se faz isso
+// FIXANDO o SPKI dessa CA, nunca desligando a verificacao.
+const CHROMIUM_LOCAL = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+const CA_PROXY = '/root/.ccr/agent-proxy-ca.crt'
+const SPKI_PROXY = 'KnP1OnzHv/y42eRQmbGwoYTHcSJF448m6CU5mdngwKk=,PS48cX347wDVcRynzq+DFqswl2PLNE1sG6uQvxMCOS0='
+const opcoes = {}
+if (existsSync(CHROMIUM_LOCAL)) opcoes.executablePath = CHROMIUM_LOCAL
+if (existsSync(CA_PROXY)) opcoes.args = [`--ignore-certificate-errors-spki-list=${SPKI_PROXY}`]
+const browser = await chromium.launch(opcoes)
 
 async function medir (url, mutar) {
   const ctx = await browser.newContext({ viewport: { width: LARG, height: 1000 }, deviceScaleFactor: 1 })

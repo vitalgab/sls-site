@@ -1,0 +1,123 @@
+# Publicação do site.
+#
+# Existe por causa de um incidente: em 14/07/2026 alguém buildou e publicou a
+# partir de uma cópia local que nunca foi commitada. A branch gh-pages ficou com
+# um site que não saía de nenhum commit da main, e o código-fonte se perdeu.
+# Enquanto publicar for um comando que qualquer máquina roda, isso se repete.
+# Aqui, o que vai ao ar sai SEMPRE de um commit da main, e só se passar nos
+# testes.
+#
+# Por que empurrar para gh-pages em vez de usar actions/deploy-pages: o Pages
+# deste repositório está em "Deploy from a branch: gh-pages", e trocar para
+# "GitHub Actions" exigiria mexer no painel. Este job mantém o arranjo atual —
+# faz o que o `gh-pages -d dist` fazia, só que a partir da main e com testes
+# na frente.
+#
+# Por que nenhuma action de terceiro: só actions/checkout e actions/setup-node,
+# as duas do próprio GitHub. O passo de publicar é git puro. Um repositório que
+# acabou de perder o código-fonte não precisa de mais uma peça de confiança na
+# cadeia, ainda por cima uma que recebe token de escrita.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Um deploy por vez, e sem cancelar o que já começou: cancelar no meio podia
+# deixar a gh-pages com um build pela metade.
+concurrency:
+  group: deploy-gh-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Servir o build no mesmo caminho da produção
+        run: |
+          mkdir -p .servir/sls-site
+          cp -r dist/. .servir/sls-site/
+          (cd .servir && nohup python3 -m http.server 8099 --bind 127.0.0.1 > /tmp/http.log 2>&1 &)
+          for _ in $(seq 1 40); do
+            if curl -sf -o /dev/null http://127.0.0.1:8099/sls-site/; then
+              echo "servidor de pé"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::o servidor local não respondeu em 40s"
+          cat /tmp/http.log
+          exit 1
+
+      - name: Smoke
+        run: node scripts/smoke.mjs
+
+      # Suíte verde não vale nada se ela não souber reprovar. Cada impostor muta
+      # o artefato SERVIDO (folha de estilo ou bundle) e tem de derrubar o
+      # smoke. Se algum passar verde, o deploy para aqui.
+      - name: Os impostores têm de morder
+        run: |
+          falhou=0
+          for m in impostor-css impostor-rede impostor-wa impostor-em \
+                   impostor-missao impostor-persona impostor-manifest impostor-logo; do
+            cod=0
+            MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
+            if [ "$cod" -eq 0 ]; then
+              echo "::error::o impostor $m passou VERDE — o smoke não discrimina"
+              tail -25 "/tmp/$m.log"
+              falhou=1
+            else
+              echo "ok: $m mordeu (exit $cod)"
+            fi
+          done
+          cod=0
+          MODO=modo-que-nao-existe node scripts/smoke.mjs > /tmp/desconhecido.log 2>&1 || cod=$?
+          if [ "$cod" -ne 3 ]; then
+            echo "::error::modo desconhecido devia sair 3 (instrumento), saiu $cod"
+            falhou=1
+          else
+            echo "ok: modo desconhecido saiu 3"
+          fi
+          exit "$falhou"
+
+      - name: Publicar em gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q \
+            -m "deploy a partir de ${GITHUB_SHA}" \
+            -m "Gerado por .github/workflows/deploy.yml. NÃO edite esta branch à mão: o próximo deploy sobrescreve tudo. A fonte está na main, no commit ${GITHUB_SHA}."
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          {
+            echo "### Publicado"
+            echo "gh-pages agora sai de \`${GITHUB_SHA}\`."
+            echo "Site: https://vitalgab.github.io/sls-site/"
+          } >> "$GITHUB_STEP_SUMMARY"

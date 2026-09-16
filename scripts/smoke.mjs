@@ -15,6 +15,7 @@
  * script com exit 3, para "nao mordeu" nunca se confundir com "nao rodou".
  */
 import { chromium } from 'playwright'
+import { existsSync } from 'node:fs'
 
 const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/sls-site/'
 const SHOTS = process.env.SHOTS_DIR || null
@@ -38,11 +39,31 @@ const mutar = (txt, de, para, rotulo) => {
   return txt.split(de).join(para)
 }
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  // confia SOMENTE na CA do proxy desta sessao (SPKI fixado), em vez de desligar TLS
-  args: ['--ignore-certificate-errors-spki-list=KnP1OnzHv/y42eRQmbGwoYTHcSJF448m6CU5mdngwKk=,PS48cX347wDVcRynzq+DFqswl2PLNE1sG6uQvxMCOS0='],
-})
+// O Chromium e a CA mudam conforme onde isto roda. Em CI o Playwright resolve o
+// binario sozinho; num ambiente atras de proxy que reemite TLS, o binario vem
+// pronto em /opt/pw-browsers e e preciso confiar na CA do proxy — e se faz isso
+// FIXANDO o SPKI dessa CA, nunca desligando a verificacao.
+const CHROMIUM_LOCAL = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+const CA_PROXY = '/root/.ccr/agent-proxy-ca.crt'
+const SPKI_PROXY = 'KnP1OnzHv/y42eRQmbGwoYTHcSJF448m6CU5mdngwKk=,PS48cX347wDVcRynzq+DFqswl2PLNE1sG6uQvxMCOS0='
+const opcoes = {}
+if (existsSync(CHROMIUM_LOCAL)) opcoes.executablePath = CHROMIUM_LOCAL
+if (existsSync(CA_PROXY)) opcoes.args = [`--ignore-certificate-errors-spki-list=${SPKI_PROXY}`]
+const browser = await chromium.launch(opcoes)
+
+// O hero puxa 4 fotos do images.unsplash.com. Esperar por networkidle e o ideal,
+// mas se o Unsplash engasgar o smoke morre e leva o deploy junto — falha de
+// terceiro derrubando publicacao. Entao: tenta networkidle, e cai para 'load'.
+// Nenhuma assercao depende dessas fotos; as que dependem de imagem (personas,
+// logos) sao servidas pelo proprio site e tem espera propria.
+async function irPara (page, url) {
+  try {
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 25000 })
+  } catch {
+    console.error('  [aviso] networkidle estourou; seguindo com waitUntil=load')
+    await page.goto(url, { waitUntil: 'load', timeout: 25000 })
+  }
+}
 
 async function abrir (w, h) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
@@ -97,7 +118,7 @@ async function varrerPagina (page) {
 // ---------------- DESKTOP ----------------
 {
   const { ctx, page } = await abrir(1440, 1000)
-  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await irPara(page, BASE)
   await page.evaluate(() => document.fonts.ready.then(() => 0))
   await varrerPagina(page)
 
@@ -313,7 +334,7 @@ async function varrerPagina (page) {
   }
 
   if (SHOTS) {
-    await page.goto(BASE, { waitUntil: 'networkidle' })
+    await irPara(page, BASE)
     await page.evaluate(() => document.fonts.ready.then(() => 0))
     await varrerPagina(page)
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' })
@@ -330,7 +351,7 @@ async function varrerPagina (page) {
 // ---------------- MOBILE ----------------
 {
   const { ctx, page } = await abrir(390, 844)
-  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await irPara(page, BASE)
   await page.evaluate(() => document.fonts.ready.then(() => 0))
   await varrerPagina(page)
 
