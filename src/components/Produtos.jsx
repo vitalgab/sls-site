@@ -1,4 +1,4 @@
-const WA_NUMBER = '5571981018556'
+import { WA_NUMBER } from '../contato'
 
 const produtos = [
   {

@@ -6,6 +6,7 @@ import Seguradoras from './components/Seguradoras'
 import Sobre from './components/Sobre'
 import Contato from './components/Contato'
 import Footer from './components/Footer'
+import { WA_NUMBER } from './contato'
 import './index.css'
 
 export default function App() {
@@ -22,7 +23,7 @@ export default function App() {
 
       {/* WhatsApp flutuante */}
       <a
-        href="https://wa.me/5571981018556"
+        href={`https://wa.me/${WA_NUMBER}`}
         target="_blank"
         rel="noopener"
         title="Falar pelo WhatsApp"

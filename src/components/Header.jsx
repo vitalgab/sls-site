@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-const WA_NUMBER = '5571981018556'
+import { WA_NUMBER } from '../contato'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)

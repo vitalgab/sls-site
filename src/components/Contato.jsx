@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const WA_NUMBER = '5571981018556'
+import { WA_NUMBER } from '../contato'
 
 export default function Contato() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', interesse: '', mensagem: '' })
