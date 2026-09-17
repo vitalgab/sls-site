@@ -4,6 +4,7 @@ const FAIXA_IMG = `${import.meta.env.BASE_URL}assets/faixa-familia.webp`
 // Os rotulos ficam em HTML, FORA da imagem: <text> dentro de SVG nao quebra
 // linha sozinho e, em 390px, "FOCO NO CLIENTE" saia da viewBox sem aviso.
 const TRIANGULO = `${import.meta.env.BASE_URL}assets/triangulo-pilares.svg`
+const FOTO_GABRIEL = `${import.meta.env.BASE_URL}assets/gabriel.webp`
 
 const pilares = [
   { n: '01', label: 'Confiança', desc: 'Transparência em cada indicação. Você sabe exatamente o que está contratando e por quê.' },
@@ -135,27 +136,6 @@ export default function Sobre() {
               <span className="pilar-rotulo pilar-base" style={{ color: '#8F7325' }}>Longo prazo</span>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: 8 }}>
-              <blockquote style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 20,
-                fontStyle: 'normal',
-                fontWeight: 300,
-                color: 'var(--navy)',
-                lineHeight: 1.6,
-                borderLeft: 'none',
-                margin: 0,
-                padding: 0,
-              }}>
-                "Meu papel é estar lá antes de você precisar."
-              </blockquote>
-              <footer style={{
-                fontSize: 13, fontWeight: 600, color: 'var(--gray-600)',
-                marginTop: 12, letterSpacing: 0.5,
-              }}>
-                — Gabriel Vital
-              </footer>
-            </div>
           </div>
 
           <div className="diferenciais-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
@@ -185,11 +165,65 @@ export default function Sobre() {
           </div>
         </div>
 
+        {/* A citacao sai da coluna de texto e vira faixa propria, largura
+            inteira, no navy da marca. Antes ela era um paragrafo cinza no fim de
+            uma grade — dizia a mesma coisa e ninguem lia. */}
+        <div className="faixa-citacao">
+          <div className="container citacao-grade">
+            <img
+              className="citacao-foto"
+              src={FOTO_GABRIEL}
+              alt="Gabriel Vital"
+              width="712" height="712"
+              loading="lazy"
+            />
+            <div className="citacao-texto-col">
+              <blockquote className="citacao-texto">
+                {'"Meu papel é estar lá antes de você precisar."'}
+              </blockquote>
+              <footer className="citacao-assinatura">— Gabriel Vital</footer>
+            </div>
+          </div>
+        </div>
+
         <style>{`
           .dif-card:hover {
             border-color: var(--navy) !important;
             box-shadow: var(--shadow-md);
             background: var(--white) !important;
+          }
+          /* A faixa da citacao. O dourado da assinatura e #C9A84C, que da 5,00:1
+             sobre o navy — o mesmo dourado claro da marca. O #8F7325 do rotulo
+             LONGO PRAZO foi escolhido para fundo BRANCO e aqui daria 2,4:1:
+             contraste e uma relacao entre DUAS cores, nao propriedade de uma. */
+          .faixa-citacao { background: var(--navy); padding: 76px 0; }
+          .citacao-grade {
+            display: grid; grid-template-columns: auto 1fr;
+            gap: 48px; align-items: center;
+          }
+          .citacao-foto {
+            width: 160px; height: 160px; border-radius: 50%;
+            border: 3px solid #C9A84C; object-fit: cover;
+            display: block; flex-shrink: 0;
+          }
+          .citacao-texto {
+            font-family: var(--font-display);
+            font-size: clamp(21px, 2.4vw, 32px);
+            font-weight: 300; font-style: normal;
+            color: #fff; line-height: 1.45;
+            margin: 0; padding: 0; border-left: none;
+          }
+          .citacao-assinatura {
+            margin-top: 20px; font-size: 13px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase; color: #C9A84C;
+          }
+          @media (max-width: 768px) {
+            .faixa-citacao { padding: 56px 0; }
+            .citacao-grade {
+              grid-template-columns: 1fr; gap: 26px;
+              justify-items: center; text-align: center;
+            }
+            .citacao-foto { width: 110px; height: 110px; }
           }
           /* Rotulo FORA da figura, nunca por cima. Grade de tres colunas: o
              texto ocupa coluna propria, entao o espaco dele sai do espaco da

@@ -28,6 +28,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
+  'impostor-retrato',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -114,6 +115,8 @@ async function abrir (w, h, opcoes = {}) {
     })
   }
   if (MODO === 'impostor-persona') await page.route(/persona-.*\.(jpg|webp)/, r => r.abort())
+  // derruba o retrato do Gabriel na faixa da citacao
+  if (MODO === 'impostor-retrato') await page.route(/assets\/gabriel\.webp/, r => r.abort())
   // derruba a foto da faixa: o fundo some e so sobra o gradiente
   if (MODO === 'impostor-faixa') await page.route(/faixa-familia\.webp/, r => r.abort())
   // derruba UM logo: o teste tem de acusar o que faltou, nao so contar quantos ha
@@ -589,6 +592,76 @@ async function medirLogoCabecalho (page) {
   })
   V('contraste AA dos tres rotulos dos pilares', ctRot.length === 3 && ctRot.every(r => r.razao >= 4.5),
     ctRot.map(r => `${r.txt} ${r.razao}:1`).join(' | '))
+
+  // ---- 3b4. a faixa da citacao ----
+  // O retrato tem loading="lazy": ele so e buscado quando a faixa chega perto da
+  // viewport. Sem levar a faixa ate la e ESPERAR, naturalWidth mede 0 e a
+  // assercao acusa um defeito que nao existe — foi o que aconteceu aqui.
+  // A espera tem prazo e o erro e engolido de proposito: se a foto nao chegar,
+  // quem reprova e a assercao abaixo. Esperar pela propria condicao que se
+  // afirma, sem prazo, seria vacuidade.
+  const faixaCit = await page.$('.faixa-citacao')
+  if (faixaCit) {
+    await faixaCit.scrollIntoViewIfNeeded().catch(() => {})
+    await page.waitForFunction(
+      () => { const i = document.querySelector('.citacao-foto'); return i && i.complete && i.naturalWidth > 0 },
+      null, { timeout: 10000 }).catch(() => {})
+  }
+  const cit = await page.evaluate(() => {
+    const f = document.querySelector('.faixa-citacao')
+    if (!f) return null
+    const img = f.querySelector('.citacao-foto')
+    const q = f.querySelector('.citacao-texto')
+    const a = f.querySelector('.citacao-assinatura')
+    if (!img || !q || !a) return { incompleta: true, img: !!img, q: !!q, a: !!a }
+    const resolver = el => {
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor
+        if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c
+      }
+      return 'rgb(255, 255, 255)'
+    }
+    const canal = s => { const m = s.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 } }
+    const compor = (f0, b0) => { const x = canal(f0), y = canal(b0)
+      return { r: x.r * x.a + y.r * (1 - x.a), g: x.g * x.a + y.g * (1 - x.a), b: x.b * x.a + y.b * (1 - x.a), a: 1 } }
+    const lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    const lum = c => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b)
+    const razao = (frente, fundo) => { const x = lum(compor(frente, fundo)), y = lum(canal(fundo))
+      return +(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05))).toFixed(2) }
+    const ri = img.getBoundingClientRect(), rq = q.getBoundingClientRect()
+    const cs = getComputedStyle(img)
+    return {
+      texto: q.textContent.trim(), assinatura: a.textContent.trim(),
+      fundo: getComputedStyle(f).backgroundColor,
+      ctTexto: razao(getComputedStyle(q).color, resolver(q)),
+      ctAssinatura: razao(getComputedStyle(a).color, resolver(a)),
+      fam: getComputedStyle(q).fontFamily.split(',')[0].replace(/"/g, ''),
+      peso: getComputedStyle(q).fontWeight, estilo: getComputedStyle(q).fontStyle,
+      nat: img.naturalWidth, src: img.getAttribute('src'),
+      redonda: cs.borderRadius === '50%',
+      borda: `${cs.borderTopWidth} ${cs.borderTopColor}`,
+      lado: Math.round(ri.width), quadrada: Math.abs(ri.width - ri.height) <= 1,
+      aEsquerda: Math.round(ri.right) <= Math.round(rq.left) + 2,
+      largura: Math.round(f.getBoundingClientRect().width),
+      janela: window.innerWidth,
+    }
+  })
+  if (!cit) { console.error('INSTRUMENTO: .faixa-citacao nao existe'); process.exit(3) }
+  if (cit.incompleta) { console.error(`INSTRUMENTO: faixa da citacao incompleta: ${JSON.stringify(cit)}`); process.exit(3) }
+  V('citacao do Gabriel na faixa', cit.texto === '"Meu papel é estar lá antes de você precisar."' && cit.assinatura === '— Gabriel Vital',
+    `${JSON.stringify(cit.texto)} / ${JSON.stringify(cit.assinatura)}`)
+  V('faixa da citacao e navy e ocupa a largura da tela', cit.fundo === 'rgb(0, 58, 112)' && cit.largura === cit.janela,
+    `${cit.fundo}, ${cit.largura}px de ${cit.janela}px`)
+  V('citacao em Montserrat 300, sem inclinacao', cit.fam === 'Montserrat' && cit.peso === '300' && cit.estilo === 'normal',
+    `${cit.fam} ${cit.peso} ${cit.estilo}`)
+  // Dourado sobre navy: a assinatura e o ponto fraco obvio, e e por isso que ela
+  // e medida junto com o texto, nao no lugar dele.
+  V('contraste AA do texto e da assinatura da citacao', cit.ctTexto >= 4.5 && cit.ctAssinatura >= 4.5,
+    `texto ${cit.ctTexto}:1 | assinatura ${cit.ctAssinatura}:1 sobre ${cit.fundo}`)
+  V('retrato do Gabriel carregou, redondo e com borda dourada',
+    cit.nat > 0 && cit.redonda && cit.quadrada && cit.borda === '3px rgb(201, 168, 76)',
+    `${cit.src} nat=${cit.nat} ${cit.lado}px raio50=${cit.redonda} quadrada=${cit.quadrada} borda=${cit.borda}`)
+  V('retrato a esquerda do texto em 1440px', cit.aEsquerda, `img.right <= texto.left: ${cit.aEsquerda}`)
 
   V('logo do cabecalho carregou', logoD.completo, `${logoD.larg}x${logoD.alt}`)
   V('logo do cabecalho sem deformar (proporcao igual a do arquivo)',
@@ -1182,6 +1255,29 @@ async function medirLogoCabecalho (page) {
   V('logo do cabecalho cabe na barra em 390px', logoM.transborda === 0, `transborda ${logoM.transborda}px`)
   V('logo do cabecalho nao encosta no menu em 390px', logoM.folga === null || logoM.folga > 16,
     `${logoM.larg}x${logoM.alt}, folga ${logoM.folga}px`)
+
+  // No celular o retrato vai para CIMA do texto e centraliza. Afirmar so o
+  // desktop deixaria o empilhamento quebrar sem ninguem ver.
+  const faixaCit390 = await page.$('.faixa-citacao')
+  if (faixaCit390) {
+    await faixaCit390.scrollIntoViewIfNeeded().catch(() => {})
+    await page.waitForFunction(
+      () => { const i = document.querySelector('.citacao-foto'); return i && i.complete && i.naturalWidth > 0 },
+      null, { timeout: 10000 }).catch(() => {})
+  }
+  const cit390 = await page.evaluate(() => {
+    const f = document.querySelector('.faixa-citacao')
+    if (!f) return null
+    const img = f.querySelector('.citacao-foto'), q = f.querySelector('.citacao-texto')
+    const ri = img.getBoundingClientRect(), rq = q.getBoundingClientRect()
+    return { acima: Math.round(ri.bottom) <= Math.round(rq.top) + 2,
+      lado: Math.round(ri.width),
+      centrada: Math.abs((ri.left + ri.right) / 2 - (rq.left + rq.right) / 2) <= 4,
+      nat: img.naturalWidth }
+  })
+  if (!cit390) { console.error('INSTRUMENTO: .faixa-citacao sumiu em 390px'); process.exit(3) }
+  V('retrato acima do texto e centrado em 390px', cit390.acima && cit390.centrada && cit390.nat > 0,
+    `acima=${cit390.acima} centrada=${cit390.centrada} ${cit390.lado}px nat=${cit390.nat}`)
 
   // Em 390px a grade do hero vira UMA coluna e o texto ocupa a largura inteira.
   // Com o veu horizontal de antes, o fim de cada linha caia sobre a parte clara
