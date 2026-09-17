@@ -34,7 +34,8 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
   'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
-  'impostor-ancora', 'impostor-foco',
+  'impostor-ancora', 'impostor-foco', 'impostor-titulo', 'impostor-cidade',
+  'impostor-cidade-ld', 'impostor-ldurl',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -138,6 +139,30 @@ async function aplicarRotas (page) {
   // volta ao estado anterior: manifest e icones publicados, mas o index.html sem
   // anuncia-los. O impostor-manifest derruba o ARQUIVO; este derruba o ANUNCIO,
   // que e coisa diferente e precisava da propria prova.
+  // QUATRO IMPOSTORES PARA UM PAR DE CAMPOS, e o motivo e que as assercoes
+  // apontam para LADOS OPOSTOS: o titulo tem de PERDER a cidade, e a description
+  // e o JSON-LD tem de MANTE-LA. Um impostor so, mexendo em tudo, morderia e nao
+  // diria qual das cinco linhas soube reprovar. Um por campo diz.
+  if (['impostor-titulo', 'impostor-cidade', 'impostor-cidade-ld', 'impostor-ldurl'].includes(MODO)) {
+    await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
+      let t = await (await r.fetch()).text()
+      if (MODO === 'impostor-titulo') {
+        t = mutar(t, '<title>Seu Legado Seguro | Corretora de Seguros</title>',
+          '<title>Seu Legado Seguro | Corretora de Seguros em Salvador</title>', 'titulo da pagina')
+      } else if (MODO === 'impostor-cidade') {
+        // tira a cidade da description. E o defeito CARO e invisivel: a previa
+        // continua bonita, o titulo continua certo, e a busca local se perde.
+        t = mutar(t, 'Corretora de seguros em Salvador especializada',
+          'Corretora de seguros especializada', 'cidade na description')
+      } else if (MODO === 'impostor-cidade-ld') {
+        t = mutar(t, '"addressLocality": "Salvador"', '"addressLocality": "Brasil"', 'cidade no JSON-LD')
+      } else {
+        t = mutar(t, '"url": "https://seulegadoseguro.com.br"',
+          '"url": "https://vitalgab.github.io/sls-site/"', 'url do JSON-LD')
+      }
+      await r.fulfill({ body: t, contentType: 'text/html' })
+    })
+  }
   if (MODO === 'impostor-pwa') {
     await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
       let t = await (await r.fetch()).text()
@@ -1567,6 +1592,42 @@ async function medirLogoCabecalho (page) {
       await el.screenshot({ path: `${SHOTS}/390-${nome}.png` })
     }
   }
+  await ctx.close()
+}
+
+// ---------------- A PREVIA DO LINK: TITULO E DESCRICAO ----------------
+// O WhatsApp, o Google e o LinkedIn montam a previa com o <title> e a meta
+// description. Nenhum dos dois tinha assercao nenhuma ate aqui: o texto que
+// mais gente le antes de abrir o site era o unico sem guarda.
+//
+// E SAO DUAS PROPRIEDADES OPOSTAS, de proposito. O titulo saiu de "em Salvador"
+// porque o atendimento e nacional; a cidade FICA na description e no JSON-LD,
+// que e o que sustenta a busca local. Afirmar so "sem Salvador" deixaria alguem
+// tirar a cidade de todo lugar e passar verde — e isso custaria a busca local
+// sem nenhuma linha vermelha.
+{
+  const { ctx, page } = await abrir(1440, 900)
+  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 })
+  const meta = await page.evaluate(() => {
+    const m = s => document.querySelector(s)?.getAttribute('content') || ''
+    let ld = null
+    try { ld = JSON.parse(document.querySelector('script[type="application/ld+json"]')?.textContent || 'null') } catch { ld = null }
+    return {
+      titulo: document.title,
+      descricao: m('meta[name="description"]'),
+      ldNome: ld?.name || null,
+      ldCidade: ld?.address?.addressLocality || null,
+      ldUrl: ld?.url || null
+    }
+  })
+  const TITULO = 'Seu Legado Seguro | Corretora de Seguros'
+  V('titulo da pagina exato', meta.titulo === TITULO, JSON.stringify(meta.titulo))
+  V('titulo sem a cidade', !/salvador/i.test(meta.titulo), JSON.stringify(meta.titulo))
+  V('description ainda cita a cidade', /salvador/i.test(meta.descricao),
+    meta.descricao.slice(0, 72) + '...')
+  V('JSON-LD ainda cita a cidade', meta.ldCidade === 'Salvador', `addressLocality=${meta.ldCidade}`)
+  V('JSON-LD com nome e url coerentes', meta.ldNome === 'Seu Legado Seguro' && meta.ldUrl === 'https://seulegadoseguro.com.br',
+    `name=${meta.ldNome} url=${meta.ldUrl}`)
   await ctx.close()
 }
 
