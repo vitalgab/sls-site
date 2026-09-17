@@ -33,7 +33,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
-  'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
+  'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -223,7 +223,8 @@ async function aplicarRotas (page) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'impostor-vao-branco', 'impostor-veu', 'impostor-cabecalho',
+    'impostor-grade', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-veu',
+    'impostor-cabecalho',
     'impostor-impar', 'impostor-dourado',
     'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
@@ -272,6 +273,11 @@ async function aplicarRotas (page) {
         // horizontal, o site nao reprova — passa raspando.
         t = mutar(t, 'rgba(0,20,52,0.86) 0%,\n              rgba(0,20,52,0.80) 40%',
           'rgba(0,20,52,0.10) 0%,\n              rgba(0,20,52,0.08) 40%', 'forca do veu no celular')
+      } else if (MODO === 'impostor-sem-divisoria') {
+        // Apaga a linha. Sem ela as duas areas navy voltam a ler como uma, que
+        // e o estado que o Gabriel reprovou olhando a tela.
+        t = mutar(t, 'background: rgba(201,168,76,0.5);', 'background: transparent;',
+          'linha dourada da divisoria')
       } else if (MODO === 'impostor-vao-branco') {
         // O IRMAO DO impostor-vizinhanca, E ELE EXISTE PORQUE O OUTRO NAO
         // BASTOU. Zerar o padding das secoes derruba a assercao do VAO, mas
@@ -281,8 +287,12 @@ async function aplicarRotas (page) {
         // Aqui volta o defeito que estava no ar: 48px brancos entre a faixa
         // navy e a CTA navy. A regra da faixa mora num <style> DENTRO do
         // bundle, nao na folha, entao a mutacao e aqui.
-        t = mutar(t, '.faixa-citacao { background: var(--navy); padding: 76px 0; }',
-          '.faixa-citacao { background: var(--navy); padding: 76px 0; margin-bottom: 48px; }',
+        // ⚠️ ESTA ANCORA JA QUEBROU DUAS VEZES, e as duas foram exit 3, nunca
+        // "passou verde": a regra .faixa-citacao foi reescrita pelo commit da
+        // divisoria e depois de novo quando a linha virou dourada. E o motivo
+        // de o CI so aceitar exit 1 como mordida.
+        t = mutar(t, 'padding: var(--space-faixa-y) 0 var(--space-divisor-y);',
+          'padding: var(--space-faixa-y) 0 var(--space-divisor-y); margin-bottom: 48px;',
           'vao branco embaixo da faixa')
       } else if (MODO === 'impostor-grade') {
         // 3 nao divide 4: o quarto cartao fica sozinho na segunda linha, que e
@@ -1595,7 +1605,22 @@ async function medirLogoCabecalho (page) {
         total++
         if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) n++
       }
-      return { n, total, larg, width, height }
+      // Linha divisoria: uma FILEIRA inteira distinguivel do navy do fundo, sem
+      // ser clara. Contar pixels soltos nao serve — texto, foto e borda tambem
+      // sao "diferentes do navy". O que caracteriza a divisoria e atravessar a
+      // largura toda.
+      const NAVY = [0, 58, 112]
+      const fileiras = []
+      for (let y = 0; y < height; y++) {
+        let dif = 0
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4
+          const d = Math.max(Math.abs(data[i] - NAVY[0]), Math.abs(data[i + 1] - NAVY[1]), Math.abs(data[i + 2] - NAVY[2]))
+          if (d > 20 && !(data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230)) dif++
+        }
+        if (dif >= width * 0.95) fileiras.push(y)
+      }
+      return { n, total, larg, width, height, fileiras }
     }, [tira.toString('base64'), W])
     if (claros.total === 0) {
       console.error(`INSTRUMENTO: a tira lida em ${W}px veio vazia`)
@@ -1604,6 +1629,93 @@ async function medirLogoCabecalho (page) {
     V(`sem faixa branca entre a citacao e a secao seguinte em ${W}px`, claros.n === 0,
       `${claros.n} de ${claros.total} pixels claros na tira de ${claros.width}x${claros.height} | ` +
       `vao=${m.vaoSeguinte}px vizinho=${m.bgSeguinte}`)
+    // O CONSERTO ANTERIOR CRIOU ESTE PROBLEMA. Tirar a tira branca fez a faixa
+    // encostar na CTA, e as duas sao o mesmo navy: virou um bloco so, sem
+    // comeco nem fim. Quem viu foi o Gabriel, na tela, antes de qualquer
+    // assercao minha — "sem faixa branca" estava verde o tempo todo.
+    //
+    // A divisoria e lida em PIXEL, numa tira alta o bastante para conter os
+    // dois respiros. Duas propriedades, e sao independentes: ela EXISTE (linha
+    // dourada, centrada, 25-35% do container) e ela esta no MEIO (a tinta de
+    // cima e a de baixo a menos de 4px de diferenca). Uma linha dourada torta
+    // passaria na primeira e reprovaria na segunda.
+    const linhaY = await page.evaluate(() => {
+      const e = document.querySelector('.divisor-citacao span')
+      return e ? Math.round(e.getBoundingClientRect().top + window.scrollY) : null
+    })
+    if (linhaY == null) { console.error(`INSTRUMENTO: .divisor-citacao span nao existe em ${W}px`); process.exit(3) }
+    const ALTURA = 200
+    const dentro2 = await page.evaluate(y => {
+      const antes = document.documentElement.style.scrollBehavior
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, Math.max(0, y - Math.round(window.innerHeight / 2)))
+      document.documentElement.style.scrollBehavior = antes
+      return y - window.scrollY
+    }, linhaY - ALTURA / 2)
+    await page.waitForTimeout(150)
+    if (dentro2 < 0 || dentro2 + ALTURA > (W < 500 ? 844 : 1024)) {
+      console.error(`INSTRUMENTO: a divisoria caiu em y=${dentro2} da viewport em ${W}px`)
+      process.exit(3)
+    }
+    const faixaPng = await page.screenshot({ clip: { x: 0, y: dentro2, width: W, height: ALTURA } })
+    const div = await page.evaluate(async ([b64]) => {
+      const img = new Image()
+      await new Promise((ok, err) => { img.onload = ok; img.onerror = err; img.src = 'data:image/png;base64,' + b64 })
+      const cv = document.createElement('canvas')
+      cv.width = img.width; cv.height = img.height
+      const c2 = cv.getContext('2d', { willReadFrequently: true })
+      c2.drawImage(img, 0, 0)
+      const { data, width, height } = c2.getImageData(0, 0, cv.width, cv.height)
+      const NAVY = [0, 58, 112]
+      const dif = (x, y) => {
+        const i = (y * width + x) * 4
+        return Math.max(Math.abs(data[i] - NAVY[0]), Math.abs(data[i + 1] - NAVY[1]), Math.abs(data[i + 2] - NAVY[2]))
+      }
+      const cor = (x, y) => { const i = (y * width + x) * 4; return [data[i], data[i + 1], data[i + 2]] }
+      // ⚠️ A FILEIRA E ACHADA PELA MAIOR CORRIDA CONTIGUA, nao pela contagem de
+      // pixels da fileira. A primeira versao contava pixel "dourado" solto e
+      // travou na ASSINATURA — "— GABRIEL VITAL" e dourada tambem, e some no
+      // meio de uma tira de 200px. Glifo tem corrida de poucos pixels; regua
+      // tem centenas. A contagem nao distinguia os dois; a contiguidade sim.
+      //
+      // E nao ha teste de "e dourado?" aqui, porque o meu estava errado: o
+      // #C9A84C a 50% sobre o navy da (100,113,94), com VERDE maior que
+      // vermelho. Quem afirma a cor e a assercao, com a cor MEDIDA no meio da
+      // linha, e nao um palpite sobre canais.
+      let melhor = { y: -1, n: 0, x0: 0, x1: 0 }
+      for (let y = 0; y < height; y++) {
+        let n = 0, ini = -1
+        for (let x = 0; x <= width; x++) {
+          if (x < width && dif(x, y) > 20) { if (ini < 0) ini = x; n = x - ini + 1 } else {
+            if (ini >= 0 && n > melhor.n) melhor = { y, n, x0: ini, x1: x - 1 }
+            ini = -1; n = 0
+          }
+        }
+      }
+      // tinta acima e abaixo: primeira fileira com qualquer coisa que nao seja navy
+      let acima = -1, abaixo = -1
+      for (let y = melhor.y - 2; y >= 0; y--) { if ([...Array(Math.ceil(width / 2))].some((_, k) => dif(k * 2, y) > 24)) { acima = melhor.y - y - 1; break } }
+      for (let y = melhor.y + 2; y < height; y++) { if ([...Array(Math.ceil(width / 2))].some((_, k) => dif(k * 2, y) > 24)) { abaixo = y - melhor.y - 1; break } }
+      return { ...melhor, width, height, acima, abaixo, centro: Math.round((melhor.x0 + melhor.x1) / 2),
+        corLinha: cor(Math.round((melhor.x0 + melhor.x1) / 2), melhor.y) }
+    }, [faixaPng.toString('base64')])
+
+    const desvioCentro = Math.abs(div.centro - div.width / 2)
+    // 30% do container, nao da tela: em 1440 o container tem 1160 e trava em
+    // 360px, que da 25% da tela. A faixa aceita os dois regimes.
+    const contLarg = await page.evaluate(() => {
+      const c = document.querySelector('.faixa-citacao .container')
+      return c ? Math.round(c.getBoundingClientRect().width) : null
+    })
+    const pctCont = +(div.n / contLarg * 100).toFixed(1)
+    const [r0, g0, b0] = div.corLinha
+    const douradaMesmo = r0 > 80 && r0 < 120 && g0 > 95 && g0 < 130 && b0 > 75 && b0 < 110
+    V(`divisoria dourada centrada em ${W}px`,
+      (pctCont >= 25 && pctCont <= 35 || div.n >= 355 && div.n <= 365) && desvioCentro <= 4 && douradaMesmo,
+      `${div.n}px de ${contLarg} de container = ${pctCont}% | centro desviado ${desvioCentro}px | cor rgb(${div.corLinha.join(',')})`)
+    V(`divisoria simetrica em ${W}px`,
+      div.acima > 0 && div.abaixo > 0 && Math.abs(div.acima - div.abaixo) <= 4,
+      `tinta acima ${div.acima}px, abaixo ${div.abaixo}px, diferenca ${Math.abs(div.acima - div.abaixo)}px (piso 4)`)
 
     await ctx.close()
   }

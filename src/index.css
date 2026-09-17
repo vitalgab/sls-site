@@ -77,6 +77,24 @@
   --d-citacao-foto: 160px;
   --w-triangulo: 320px;
   --fs-rotulo: 13px;
+  /* O miolo da faixa da citacao e o da CTA. Os dois eram numero fixo (56 e 80)
+     e ficaram de fora da escala: depois da segunda reducao sobravam 141px de
+     azul vazio entre a assinatura e o "PROXIMO PASSO", num site cujo ritmo de
+     secao tinha ido para 38. No desktop os valores sao os que ja estavam la. */
+  --space-faixa-y: 76px;
+  --space-divisor-y: 60px;
+  /* O RESPIRO DE BAIXO NASCE MENOR DE PROPOSITO, e o motivo e metrica de fonte.
+     Acima da linha o que o olho ve terminar e a FOTO, com borda dura. Abaixo e
+     TEXTO: o eyebrow "Proximo passo" tem caixa de 18px para 14px de traco, e a
+     tinta comeca 7px abaixo do topo da caixa. Com o mesmo padding dos dois
+     lados a medicao de TINTA dava 59 acima e 67 abaixo — 8px, acima dos 4 que o
+     briefing pede, e visiveis.
+     Os valores aqui foram MEDIDOS lendo pixel, um por degrau, e a assercao
+     "divisoria simetrica" remede a tinta a cada rodada: se a fonte, o tamanho
+     ou o entrelinha mudarem, ela fica vermelha e o numero e refeito. Numero
+     medido sem guarda envelhece calado; com guarda, ele avisa. */
+  --tinta-eyebrow: 8px;
+  --space-cta-y: 80px;
 }
 
 /* TABLET (560-1023). Metade da reducao do celular: ~9% na tipografia, ~17% nos
@@ -127,6 +145,10 @@
     --h-logo: 28px;
     --d-citacao-foto: 104px;
     --w-triangulo: 288px;
+    --space-faixa-y: 57px;
+    --space-divisor-y: 57px;
+    --tinta-eyebrow: 1px;
+    --space-cta-y: 57px;
     --fs-rotulo: 12px;
   }
 }
@@ -176,6 +198,10 @@
     --h-logo: 25px;
     --d-citacao-foto: 88px;
     --w-triangulo: 175px;
+    --space-faixa-y: 38px;
+    --space-divisor-y: 38px;
+    --tinta-eyebrow: 2px;
+    --space-cta-y: 38px;
     --fs-rotulo: 9.5px;
   }
 }

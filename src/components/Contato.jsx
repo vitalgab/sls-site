@@ -15,7 +15,7 @@ export default function Contato() {
   return (
     <>
       {/* Faixa CTA */}
-      <section style={{ background: 'var(--navy)', padding: '80px 0' }}>
+      <section style={{ background: 'var(--navy)', padding: 'calc(var(--space-divisor-y) - var(--tinta-eyebrow)) 0 var(--space-cta-y)' }}>
         <div className="container" style={{ textAlign: 'center' }}>
           <span style={{
             display: 'inline-block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700, letterSpacing: 3,

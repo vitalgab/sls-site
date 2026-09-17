@@ -175,7 +175,32 @@ export default function Sobre() {
              sobre o navy — o mesmo dourado claro da marca. O #8F7325 do rotulo
              LONGO PRAZO foi escolhido para fundo BRANCO e aqui daria 2,4:1:
              contraste e uma relacao entre DUAS cores, nao propriedade de uma. */
-          .faixa-citacao { background: var(--navy); padding: 76px 0; }
+          /* A DIVISORIA, e ela existe porque o conserto anterior criou o
+             problema seguinte. Tirar a tira branca fez a faixa encostar na CTA,
+             e como as duas sao o mesmo navy o resultado foi um bloco unico sem
+             comeco nem fim — o Gabriel viu na tela antes de qualquer assercao
+             minha: "precisa ter uma divisoria aqui".
+
+             Ela e DECORATIVA: aria-hidden, sem texto, sem papel semantico. Um
+             leitor de tela nao anuncia "linha" — a separacao e visual, e so
+             visual. Dourado da marca a 50%, 30% do container e no maximo 360px.
+
+             O respiro dos dois lados sai do MESMO token, --space-divisor-y, e e
+             assim que a simetria fica verdadeira por construcao em vez de
+             depender de dois numeros que alguem lembre de manter iguais. */
+          .faixa-citacao {
+            background: var(--navy);
+            padding: var(--space-faixa-y) 0 var(--space-divisor-y);
+          }
+          .divisor-citacao {
+            background: var(--navy);
+            display: flex; justify-content: center;
+          }
+          .divisor-citacao span {
+            display: block; height: 1px;
+            width: 30%; max-width: 360px;
+            background: rgba(201,168,76,0.5);
+          }
           .citacao-grade {
             display: grid; grid-template-columns: auto 1fr;
             gap: 48px; align-items: center;
@@ -197,7 +222,6 @@ export default function Sobre() {
             letter-spacing: 2px; text-transform: uppercase; color: #C9A84C;
           }
           @media (max-width: 768px) {
-            .faixa-citacao { padding: 56px 0; }
             .citacao-grade {
               grid-template-columns: 1fr; gap: 26px;
               justify-items: center; text-align: center;
@@ -298,6 +322,8 @@ export default function Sobre() {
           </div>
         </div>
       </div>
+
+      <div className="divisor-citacao" aria-hidden="true"><span /></div>
     </>
   )
 }
