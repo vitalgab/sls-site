@@ -33,7 +33,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
-  'impostor-vizinhanca', 'impostor-vao-branco',
+  'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -148,7 +148,8 @@ async function aplicarRotas (page) {
   }
   // Tres mutacoes na folha servida, uma por guarda nova desta rodada.
   if (['impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
-    'impostor-vizinhanca'].includes(MODO)) {
+    'impostor-vizinhanca', 'impostor-piso', 'impostor-piso-cartao',
+    'impostor-piso-eyebrow', 'impostor-hierarquia'].includes(MODO)) {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       // Os alvos sao o texto MINIFICADO, que e o que o navegador recebe. Escrevi
@@ -170,6 +171,22 @@ async function aplicarRotas (page) {
         // nao move um pixel de lugar: mesma altura, mesma largura, cor outra. So o
         // braco dos blocos pode pegar isso.
         t = mutar(t, '#003a70', '#003a71', 'navy da marca')
+      } else if (MODO === 'impostor-piso') {
+        // Corpo abaixo de 13px no celular. O piso existe porque o pedido e
+        // sempre "reduza mais", e reduzir tem fim.
+        t = mutar(t, '--fs-body:13px', '--fs-body:12px', 'piso do corpo no celular')
+      } else if (MODO === 'impostor-piso-cartao') {
+        // UM IMPOSTOR POR PISO, E NAO UM PARA OS TRES. Um so que quebrasse os
+        // tres morderia mesmo que duas das assercoes estivessem vazias — o
+        // placar diria "mordeu" e nao diria QUAL soube reprovar.
+        t = mutar(t, '--fs-xs:12px', '--fs-xs:11px', 'piso do texto de cartao')
+      } else if (MODO === 'impostor-piso-eyebrow') {
+        t = mutar(t, '--fs-eyebrow:9px', '--fs-eyebrow:8px', 'piso do eyebrow no celular')
+      } else if (MODO === 'impostor-hierarquia') {
+        // h3 por baixo do corpo. Um piso que morde num degrau e nao no de baixo
+        // inverte a ordem sem que nenhum piso seja violado — nenhuma das outras
+        // assercoes pegaria isso.
+        t = mutar(t, '--fs-h3:14px', '--fs-h3:12.5px', 'h3 abaixo do corpo no celular')
       } else if (MODO === 'impostor-vizinhanca') {
         // Zera o padding de BAIXO de toda secao, que e exatamente o espaco que
         // separa o ultimo card da faixa da citacao. E o defeito que estava no ar
@@ -236,12 +253,25 @@ async function aplicarRotas (page) {
         // uma afirmacao sobre a PROPORCAO, e e so ela que este impostor quebra.
         t = mutar(t, 'width: auto; display: block', 'width: 300px; display: block', 'largura do logo do cabecalho')
       } else if (MODO === 'impostor-veu') {
-        // Devolve o veu HORIZONTAL ao celular, que e o defeito que este commit
-        // conserta: em 390px a grade tem uma coluna so, o texto ocupa a largura
-        // inteira e o fim de cada linha cai sobre a parte clara da foto. Em
-        // producao isso media 2,04:1 e 2,02:1 em dois dos tres slides.
-        t = mutar(t, 'background: linear-gradient(180deg,\n              rgba(0,20,52,0.86) 0%',
-          'background: linear-gradient(95deg,\n              rgba(0,20,52,0.86) 0%', 'direcao do veu no celular')
+        // Apaga o veu do celular: a propriedade afirmada e "o veu e o que
+        // sustenta o contraste do texto do hero", e e nele que o controle tem
+        // de bater.
+        //
+        // ⚠️ ESTE IMPOSTOR JA FOI OUTRO, E ELE MORREU NA SEGUNDA REDUCAO. A
+        // versao anterior devolvia o veu HORIZONTAL ao celular, que era o
+        // defeito historico: com a grade em uma coluna o fim de cada linha caia
+        // sobre a parte clara da foto, e media 2,04:1 em producao. Com o texto
+        // do hero menor, as linhas encurtaram e deixaram de alcancar a parte
+        // clara: o mesmo veu horizontal passou a medir 5,56 / 4,91 / 4,69:1 nos
+        // tres slides — pior que os 12,71 / 11,78 / 11,43 do real, e ainda assim
+        // ACIMA do piso de 4,5. O impostor saiu VERDE e a assercao ficou sem
+        // controle, sem ninguem tocar nela.
+        //
+        // Fica registrado o numero, porque ele e um aviso e nao uma vitoria:
+        // 4,69:1 no slide 3 e 0,19 de folga. Se alguem devolver o veu
+        // horizontal, o site nao reprova — passa raspando.
+        t = mutar(t, 'rgba(0,20,52,0.86) 0%,\n              rgba(0,20,52,0.80) 40%',
+          'rgba(0,20,52,0.10) 0%,\n              rgba(0,20,52,0.08) 40%', 'forca do veu no celular')
       } else if (MODO === 'impostor-vao-branco') {
         // O IRMAO DO impostor-vizinhanca, E ELE EXISTE PORQUE O OUTRO NAO
         // BASTOU. Zerar o padding das secoes derruba a assercao do VAO, mas
@@ -1392,10 +1422,32 @@ async function medirLogoCabecalho (page) {
       body: px(cs.fontSize), zoom: cs.zoom, transform: cs.transform,
       viewport: document.querySelector('meta[name=viewport]')?.content || '',
       h1: px(getComputedStyle(document.querySelector('#inicio h1')).fontSize),
+      h2: px(getComputedStyle(document.querySelector('#para-quem .section-title')).fontSize),
+      h3: px(getComputedStyle(document.querySelector('.paraquem-card h3')).fontSize),
+      // texto DENTRO de cartao, que tem piso proprio, mais baixo que o do corpo
+      textoCard: [...document.querySelectorAll('.paraquem-card p, .dif-card p, #produtos p, #produtos li')]
+        .map(e => px(getComputedStyle(e).fontSize)),
+      eyebrows: [...document.querySelectorAll('.section-eyebrow')].map(e => px(getComputedStyle(e).fontSize)),
       campos, alvos, pequenos: alvos.filter(a => !a.ok),
     }
   })
-  V('corpo entre 15 e 16px no celular', esc.body >= 15 && esc.body <= 16, `${esc.body}px`)
+  // OS PISOS, NAO OS VALORES DA RODADA. A versao anterior desta linha exigia
+  // "entre 15 e 16px" — o tamanho que o corpo tinha naquele dia. Na reducao
+  // seguinte ela reprovou o conserto em vez do defeito, que e o caso 103: valor
+  // medido virado em regra vira argumento CONTRA a proxima mudanca. O que nao
+  // pode mudar e o piso; o tamanho acima dele e decisao de design.
+  V('corpo >= 13px no celular', esc.body >= 13, `${esc.body}px (piso 13)`)
+  V('texto de cartao >= 12px no celular',
+    esc.textoCard.length > 0 && esc.textoCard.every(f => f >= 12),
+    `${esc.textoCard.length} textos, menor ${Math.min(...esc.textoCard)}px (piso 12)`)
+  V('eyebrow >= 9px no celular',
+    esc.eyebrows.length > 0 && esc.eyebrows.every(f => f >= 9),
+    `${esc.eyebrows.length} eyebrows, menor ${Math.min(...esc.eyebrows)}px (piso 9)`)
+  // Encolher tudo por uma razao so nao garante hierarquia: basta um piso morder
+  // num degrau e nao no de baixo para h3 passar por baixo do corpo.
+  V('hierarquia h1 > h2 > h3 > corpo no celular',
+    esc.h1 > esc.h2 && esc.h2 > esc.h3 && esc.h3 > esc.body,
+    `h1=${esc.h1} h2=${esc.h2} h3=${esc.h3} corpo=${esc.body}`)
   V('h1 do hero <= 34px no celular', esc.h1 <= 34, `${esc.h1}px`)
   // 16px e o limiar do zoom automatico do iOS: abaixo disso o Safari aproxima a
   // pagina sozinho ao tocar no campo, e nao volta.

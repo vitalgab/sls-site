@@ -28,7 +28,7 @@ export default function Header() {
     }}>
       <div className="container" style={{
         display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', height: 88,
+        justifyContent: 'space-between', height: 'var(--h-header)',
       }}>
         <a href="#inicio">
           <img
@@ -113,11 +113,10 @@ export default function Header() {
            <a> transbordar 34px da barra de 88 e cobrir o topo do hero, clicavel,
            sem nada visivel ali. O arquivo foi recortado na tinta (2975x451) e
            agora a altura da caixa E a altura da marca. */
-        .logo-header { height: 30px; width: auto; display: block; }
+        .logo-header { height: var(--h-logo); width: auto; display: block; }
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: block !important; }
-          .logo-header { height: 28px; }
         }
       `}</style>
     </header>

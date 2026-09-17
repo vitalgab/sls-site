@@ -127,7 +127,7 @@ export default function Hero() {
       alignItems: 'center',
       position: 'relative',
       overflow: 'hidden',
-      paddingTop: 88,
+      paddingTop: 'var(--h-header)',
     }}>
       {slides.map((s, i) => (
         <div key={i} style={{

@@ -38,6 +38,14 @@
   --fs-xs: 13px;
   --fs-xxs: 12px;
   --fs-eyebrow: 11px;
+  /* A nota "dentre outras..." dentro do cartao de produto. Nasceu usando o
+     token do eyebrow, mas e PARAGRAFO DE CARTAO, e o piso de texto de cartao e
+     12px no celular. O eyebrow, que e rotulo, tem piso 9. Dois papeis com pisos
+     diferentes nao cabem num token so.
+     ⚠️ E por isso ela fica MAIOR no celular (12) do que no desktop (11): o
+     desktop nao pode mudar nesta rodada, e o piso do celular e 12. A anomalia e
+     o encontro de duas regras, nao um descuido. */
+  --fs-nota: 11px;
   --fs-nano: 10px;
   --fs-micro: 9px;
   --fs-citacao: clamp(21px, 2.4vw, 32px);
@@ -62,7 +70,13 @@
   --icone-m: 26px;
   --icone-prod: 32px;
   --caixa-icone: 56px;
+  --caixa-icone-m: 48px;
   --space-card-b: 32px;
+  --h-header: 88px;
+  --h-logo: 30px;
+  --d-citacao-foto: 160px;
+  --w-triangulo: 320px;
+  --fs-rotulo: 13px;
 }
 
 /* TABLET (560-1023). Metade da reducao do celular: ~9% na tipografia, ~17% nos
@@ -71,84 +85,98 @@
    recebendo a escala de desktop. */
 @media (max-width: 1023px) {
   :root {
-    --fs-h1: clamp(30px, 4.6vw, 44px);
-    --fs-h2: 24px;
-    --fs-h3: 19px;
-    --fs-h4: 17px;
-    --fs-lead: 16px;
-    --fs-body: 15.5px;
-    --fs-btn: 15px;
-    --fs-sm: 13.5px;
-    --fs-xs: 12.5px;
-    --fs-xxs: 11.5px;
-    --fs-eyebrow: 11px;
-    --fs-nano: 10px;
-    --fs-micro: 9px;
-    --fs-citacao: 20px;
-    --fs-faixa: 19px;
-    --fs-h2-contato: 25px;
-    --fs-h2-form: 21px;
-    --fs-pilar: 18px;
-    --fs-h3-form: 20px;
-    --fs-h3-ok: 22px;
+    --fs-h1: clamp(27px, 4.1vw, 40px);
+    --fs-h2: 21.5px;
+    --fs-h3: 17px;
+    --fs-h4: 15.5px;
+    --fs-lead: 14.5px;
+    --fs-body: 14px;
+    --fs-btn: 13.5px;
+    --fs-sm: 12.5px;
+    --fs-xs: 12px;
+    --fs-xxs: 12px;
+    --fs-nota: 12px;
+    --fs-eyebrow: 10px;
+    --fs-nano: 9.5px;
+    --fs-micro: 12px;
+    --fs-citacao: 18px;
+    --fs-faixa: 17px;
+    --fs-h2-contato: 22.5px;
+    --fs-h2-form: 19px;
+    --fs-pilar: 16.5px;
+    --fs-h3-form: 18px;
+    --fs-h3-ok: 20px;
 
-    --space-secao: 64px;
-    --space-container: 24px;
-    --space-card: 24px;
-    --space-card-x: 20px;
-    --gap-g: 20px;
-    --gap-m: 18px;
-    --gap-p: 12px;
+    --space-secao: 57px;
+    --space-container: 21px;
+    --space-card: 20px;
+    --space-card-x: 17px;
+    --gap-g: 18px;
+    --gap-m: 16px;
+    --gap-p: 11px;
 
-    --h-persona: 260px;
-    --h-faixa: 270px;
-    --icone-g: 26px;
-    --icone-m: 24px;
-    --icone-prod: 29px;
-    --caixa-icone: 52px;
-    --space-card-b: 28px;
+    --h-persona: 234px;
+    --h-faixa: 243px;
+    --icone-g: 22px;
+    --icone-m: 20px;
+    --icone-prod: 25px;
+    --caixa-icone: 44px;
+    --caixa-icone-m: 41px;
+    --space-card-b: 24px;
+    --h-header: 79px;
+    --h-logo: 28px;
+    --d-citacao-foto: 104px;
+    --w-triangulo: 288px;
+    --fs-rotulo: 12px;
   }
 }
 
 /* CELULAR (<560). ~17% menor na tipografia e ~30% nos espacos. */
 @media (max-width: 559px) {
   :root {
-    --fs-h1: 28px;
-    --fs-h2: 22px;
-    --fs-h3: 17.5px;
-    --fs-h4: 16px;
-    --fs-lead: 14.5px;
-    --fs-body: 15px;
-    --fs-btn: 14.5px;
-    --fs-sm: 12.5px;
+    --fs-h1: 22.5px;
+    --fs-h2: 17.5px;
+    --fs-h3: 14px;
+    --fs-h4: 13.5px;
+    --fs-lead: 13px;
+    --fs-body: 13px;
+    --fs-btn: 12px;
+    --fs-sm: 12px;
     --fs-xs: 12px;
-    --fs-xxs: 11px;
-    --fs-eyebrow: 10px;
-    --fs-nano: 9.5px;
-    --fs-micro: 9px;
-    --fs-citacao: 19px;
-    --fs-faixa: 18px;
-    --fs-h2-contato: 22px;
-    --fs-h2-form: 19px;
-    --fs-pilar: 16.5px;
-    --fs-h3-form: 18.5px;
-    --fs-h3-ok: 20px;
+    --fs-xxs: 12px;
+    --fs-nota: 12px;
+    --fs-eyebrow: 9px;
+    --fs-nano: 9px;
+    --fs-micro: 12px;
+    --fs-citacao: 15.5px;
+    --fs-faixa: 14.5px;
+    --fs-h2-contato: 17.5px;
+    --fs-h2-form: 15.5px;
+    --fs-pilar: 13.5px;
+    --fs-h3-form: 15px;
+    --fs-h3-ok: 16px;
 
-    --space-secao: 48px;
-    --space-container: 18px;
-    --space-card: 18px;
-    --space-card-x: 16px;
-    --gap-g: 14px;
-    --gap-m: 14px;
-    --gap-p: 10px;
+    --space-secao: 38px;
+    --space-container: 14px;
+    --space-card: 13px;
+    --space-card-x: 11px;
+    --gap-g: 11px;
+    --gap-m: 11px;
+    --gap-p: 8px;
 
-    --h-persona: 210px;
-    --h-faixa: 240px;
-    --icone-g: 24px;
-    --icone-m: 22px;
-    --icone-prod: 26px;
-    --caixa-icone: 46px;
-    --space-card-b: 22px;
+    --h-persona: 168px;
+    --h-faixa: 192px;
+    --icone-g: 17px;
+    --icone-m: 15.5px;
+    --icone-prod: 18px;
+    --caixa-icone: 32px;
+    --caixa-icone-m: 34px;
+    --space-card-b: 15px;
+    --h-header: 70px;
+    --h-logo: 25px;
+    --d-citacao-foto: 88px;
+    --w-triangulo: 175px;
+    --fs-rotulo: 9.5px;
   }
 }
 

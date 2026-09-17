@@ -145,7 +145,7 @@ export default function Produtos() {
               </ul>
 
               <p style={{
-                fontSize: 'var(--fs-eyebrow)',
+                fontSize: 'var(--fs-nota)',
                 fontStyle: 'italic',
                 marginBottom: 28,
                 color: p.featured ? 'rgba(255,255,255,0.6)' : 'var(--gray-500)',

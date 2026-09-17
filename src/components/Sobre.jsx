@@ -148,7 +148,7 @@ export default function Sobre() {
                 transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
               }}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 12, marginBottom: 18,
+                  width: 'var(--caixa-icone-m)', height: 'var(--caixa-icone-m)', borderRadius: 12, marginBottom: 18,
                   background: 'var(--steel-light)', color: 'var(--navy)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
@@ -181,7 +181,7 @@ export default function Sobre() {
             gap: 48px; align-items: center;
           }
           .citacao-foto {
-            width: 160px; height: 160px; border-radius: 50%;
+            width: var(--d-citacao-foto); height: var(--d-citacao-foto); border-radius: 50%;
             border: 3px solid #C9A84C; object-fit: cover;
             display: block; flex-shrink: 0;
           }
@@ -202,7 +202,6 @@ export default function Sobre() {
               grid-template-columns: 1fr; gap: 26px;
               justify-items: center; text-align: center;
             }
-            .citacao-foto { width: 110px; height: 110px; }
           }
           /* Rotulo FORA da figura, nunca por cima. Grade de tres colunas: o
              texto ocupa coluna propria, entao o espaco dele sai do espaco da
@@ -222,11 +221,11 @@ export default function Sobre() {
           }
           .pilares-img {
             grid-area: 1 / 2;
-            width: 100%; max-width: 320px; height: auto; display: block;
+            width: 100%; max-width: var(--w-triangulo); height: auto; display: block;
           }
           .pilar-rotulo {
             font-family: var(--font-display);
-            font-weight: 600; font-size: 13px;
+            font-weight: 600; font-size: var(--fs-rotulo);
             letter-spacing: 1.2px; text-transform: uppercase;
             line-height: 1.35; white-space: nowrap;
           }
@@ -241,11 +240,11 @@ export default function Sobre() {
           .pilar-base { grid-area: 2 / 2; text-align: center; }
           @media (max-width: 560px) {
             .pilares-fig { column-gap: 10px; }
-            .pilar-rotulo { font-size: 11px; letter-spacing: 0.6px; }
+            .pilar-rotulo { letter-spacing: 0.6px; }
           }
           @media (max-width: 400px) {
             .pilares-fig { column-gap: 8px; }
-            .pilar-rotulo { font-size: 10px; letter-spacing: 0.4px; }
+            .pilar-rotulo { letter-spacing: 0.4px; }
           }
           /* background-attachment: fixed nao funciona no iOS — o Safari ignora e a
              foto sai esticada ou borrada. Abaixo de 768px vira scroll. */
