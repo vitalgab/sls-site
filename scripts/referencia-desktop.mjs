@@ -1,27 +1,32 @@
 /**
  * Golden master do DESKTOP: a prova de que uma mudanca de mobile nao vazou.
  *
- *   node scripts/referencia-desktop.mjs                  # grava a referencia
- *   ALVO=https://vitalgab.github.io/sls-site/ node scripts/referencia-desktop.mjs
+ *   node scripts/referencia-desktop.mjs                 # compara 8098 com 8099
+ *   ANTERIOR=... ATUAL=... node scripts/referencia-desktop.mjs
  *
- * Nao guarda o PNG. Guarda o SHA-256 de cada bloco de 64x64 da captura de
- * pagina inteira, mais as dimensoes. Dois motivos:
- *
- *   - tamanho: os dois PNG somam 4 MB; os dois JSON somam ~130 kB
- *   - diagnostico: um hash unico diria "mudou" e nada mais. Por bloco, a suite
- *     diz ONDE mudou, e isso e uma pista, nao um veredito cego
- *
- * Bloco diferente <=> pelo menos um pixel diferente, entao "zero blocos" e
- * exatamente "0% de pixels diferentes", que e o que se quer afirmar.
+ * Nao guarda o PNG. Compara o SHA-256 de cada bloco de 64x64 da captura de
+ * pagina inteira dos DOIS builds. Bloco diferente <=> pelo menos um pixel
+ * diferente, entao "zero blocos" e exatamente "0% de pixels diferentes".
  *
  * O PNG e decodificado DENTRO da pagina, com canvas, e o hash sai do
  * crypto.subtle do proprio navegador — sem dependencia nova para isso.
  *
- * REGENERAR SO QUANDO O DESKTOP MUDAR DE PROPOSITO. Regenerar por reflexo, para
- * "consertar" uma suite vermelha, transforma a guarda em carimbo.
+ * ⚠️ A REFERENCIA E CAPTURADA NA HORA, DO BUILD ANTERIOR, NA MESMA MAQUINA.
+ * A primeira versao disto gravava os hashes num arquivo do repositorio, e o
+ * arquivo reprovou no runner do CI: 693 dos 2576 blocos de 1440px "mudaram"
+ * numa mudanca que nao tocou uma linha do desktop. As fontes CARREGAM nos dois
+ * lugares (conferido: Montserrat e Inter respondem 200 e entram em
+ * document.fonts) — o que difere e a RASTERIZACAO, e ela difere por maquina.
+ * Era o mesmo defeito do run 12, que reprovou por ~2px de largura de rotulo.
+ *
+ * Hash de pixel so compara dentro da MESMA maquina. Gravar a referencia em
+ * arquivo e pedir que ela atravesse maquinas e transformar a guarda em loteria:
+ * ou ela reprova sempre no CI, ou alguem afrouxa o limiar ate ela nao reprovar
+ * nunca. Capturar os dois lados no mesmo navegador, no mesmo minuto, remove a
+ * variavel em vez de tolera-la.
  */
 import { chromium } from 'playwright'
-import { existsSync, writeFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 
 export const LARGURAS = [1440, 1280]
 export const BLOCO = 64
@@ -91,18 +96,29 @@ export function opcoesNavegador () {
   return o
 }
 
+export async function capturarReferencia (browser, url, W) {
+  const c = await browser.newContext({ viewport: { width: W, height: 900 }, deviceScaleFactor: 1 })
+  const p = await c.newPage()
+  await p.addInitScript(() => { const o = window.setInterval; window.setInterval = (f, t, ...r) => (t === 5000 ? 0 : o(f, t, ...r)) })
+  const png = await capturar(p, url)
+  const a = await assinar(p, png)
+  await c.close()
+  return a
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const ALVO = process.env.ALVO || 'http://127.0.0.1:8099/sls-site/'
+  const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/sls-site/'
+  const ATUAL = process.env.ATUAL || 'http://127.0.0.1:8099/sls-site/'
   const b = await chromium.launch(opcoesNavegador())
+  let falhou = 0
   for (const W of LARGURAS) {
-    const c = await b.newContext({ viewport: { width: W, height: 900 }, deviceScaleFactor: 1 })
-    const p = await c.newPage()
-    await p.addInitScript(() => { const o = window.setInterval; window.setInterval = (f, t, ...r) => (t === 5000 ? 0 : o(f, t, ...r)) })
-    const png = await capturar(p, ALVO)
-    const a = await assinar(p, png)
-    writeFileSync(`scripts/referencia/desktop-${W}.json`, JSON.stringify(a))
-    console.log(`desktop-${W}.json: ${a.width}x${a.height}, ${a.blocos.length} blocos de ${BLOCO}px`)
-    await c.close()
+    const ref = await capturarReferencia(b, ANTERIOR, W)
+    const agora = await capturarReferencia(b, ATUAL, W)
+    const r = comparar(ref, agora)
+    console.log(`${W}px: ${r.ok ? 'IDENTICO' : r.motivo}` +
+      (r.ok ? ` (0 de ${r.total} blocos de ${BLOCO}px)` : ` | primeiros ${JSON.stringify(r.diferentes.slice(0, 4))}`))
+    if (!r.ok) falhou++
   }
   await b.close()
+  process.exit(falhou ? 1 : 0)
 }

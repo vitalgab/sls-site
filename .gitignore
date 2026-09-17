@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# worktree e servidor do build anterior (guarda de desktop do smoke)
+.anterior
+.servir
+.servir-anterior

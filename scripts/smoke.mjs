@@ -15,10 +15,13 @@
  * script com exit 3, para "nao mordeu" nunca se confundir com "nao rodou".
  */
 import { chromium } from 'playwright'
-import { existsSync, readFileSync } from 'node:fs'
-import { capturar, assinar, comparar, LARGURAS } from './referencia-desktop.mjs'
+import { existsSync } from 'node:fs'
+import { capturar, assinar, comparar, capturarReferencia, LARGURAS } from './referencia-desktop.mjs'
 
 const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/sls-site/'
+// build do commit anterior, para o diff de desktop. 'nenhum' desliga a guarda
+// e IMPRIME que desligou — o smoke de producao roda sem par para comparar.
+const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/sls-site/'
 const SHOTS = process.env.SHOTS_DIR || null
 const WA = '5571981018556'
 const TEL = '+5571981018556'
@@ -29,7 +32,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
-  'impostor-retrato', 'impostor-desktop', 'impostor-zoom', 'impostor-campo',
+  'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -143,7 +146,7 @@ async function aplicarRotas (page) {
     })
   }
   // Tres mutacoes na folha servida, uma por guarda nova desta rodada.
-  if (['impostor-desktop', 'impostor-zoom', 'impostor-campo'].includes(MODO)) {
+  if (['impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo'].includes(MODO)) {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       // Os alvos sao o texto MINIFICADO, que e o que o navegador recebe. Escrevi
@@ -155,6 +158,16 @@ async function aplicarRotas (page) {
         // layout que existe, e e de proposito: se a guarda nao pega 1px, ela nao
         // pega nada.
         t = mutar(t, '--space-secao:96px', '--space-secao:97px', 'padding das secoes no desktop')
+      } else if (MODO === 'impostor-desktop-cor') {
+        // O IRMAO DO DE CIMA, E ELE EXISTE POR UM MOTIVO ESTREITO. O impostor do
+        // padding muda a ALTURA da pagina, e a comparacao morde ali, no teste de
+        // dimensao, antes de olhar um bloco sequer. Com so ele, o braco que
+        // compara bloco a bloco nunca seria exercido e eu estaria afirmando
+        // "0% dos pixels" com metade do instrumento sem prova.
+        // Um degrau no azul da marca (#003a70 -> #003a71, minificado em minusculas)
+        // nao move um pixel de lugar: mesma altura, mesma largura, cor outra. So o
+        // braco dos blocos pode pegar isso.
+        t = mutar(t, '#003a70', '#003a71', 'navy da marca')
       } else if (MODO === 'impostor-zoom') {
         // O jeito errado de encolher: amplia o pixel em vez de mudar o tamanho.
         t = mutar(t, 'body{font-size:var(--fs-body)}', 'body{font-size:var(--fs-body);zoom:.85}', 'zoom no body')
@@ -222,10 +235,12 @@ async function aplicarRotas (page) {
       } else if (MODO === 'impostor-grade') {
         // 3 nao divide 4: o quarto cartao fica sozinho na segunda linha, que e
         // exatamente o defeito que a assercao existe para pegar.
-        // o `gap:24` desambigua: ha tres grades de 4 colunas no bundle, e mutar
-        // as tres mexeria em secao que nenhuma assercao daqui observa.
-        t = mutar(t, 'gridTemplateColumns:`repeat(4, 1fr)`,gap:24',
-          'gridTemplateColumns:`repeat(3, 1fr)`,gap:24', 'colunas da grade de "Para quem"')
+        // o gap desambigua: ha tres grades de 4 colunas no bundle, e mutar as
+        // tres mexeria em secao que nenhuma assercao daqui observa. O alvo era
+        // `gap:24` e virou `gap:var(--gap-g)` quando os literais viraram token —
+        // a mutacao saiu 3 na hora, que e o que ela tem de fazer.
+        t = mutar(t, 'gridTemplateColumns:`repeat(4, 1fr)`,gap:`var(--gap-g)`',
+          'gridTemplateColumns:`repeat(3, 1fr)`,gap:`var(--gap-g)`', 'colunas da grade de "Para quem"')
       } else if (MODO === 'estresse') {
         // ESTRESSE_PX existe para PROVAR que este modo esta ligado nas
         // assercoes: com +1px tudo fica verde (e a folga encolhe, medida), com
@@ -1429,37 +1444,54 @@ async function medirLogoCabecalho (page) {
 
 // ---------------- DESKTOP INTACTO, PIXEL A PIXEL ----------------
 // A rodada da escala mexeu em tokens que o desktop tambem usa. "Nao mexi no
-// desktop" nao e afirmacao que se faca por leitura de diff: os tres primeiros
+// desktop" nao e afirmacao que se faca por leitura de diff: os quatro primeiros
 // vazamentos desta rodada passaram no meu olho e morreram AQUI — um token de
-// 19px mapeado para o de 18, um padding de 32 virando 28, e um seletor de icone
-// largo demais que pegava um <svg> de 18px.
+// 19px mapeado para o de 18, um padding de 32 virando 28, um seletor de icone
+// largo demais que pegava um <svg> de 18px, e o cartao do hero.
 //
-// A referencia e o hash de cada bloco de 64x64 da pagina inteira, em
-// scripts/referencia/. Bloco diferente <=> pixel diferente, entao "zero blocos"
-// e literalmente "0% de pixels diferentes".
-{
-  for (const W of LARGURAS) {
-    const ctx = await browser.newContext({ viewport: { width: W, height: 900 }, deviceScaleFactor: 1 })
-    const page = await ctx.newPage()
-    await page.addInitScript(() => {
-      const orig = window.setInterval
-      window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
-    })
-    if (MODO !== 'real' && MODO !== 'estresse') {
-      // os impostores mutam a folha; sem repetir o route aqui, o contexto novo
-      // receberia o artefato original e a guarda ficaria cega justamente no modo
-      // que deveria morde-la
-      await aplicarRotas(page)
+// A referencia e o BUILD ANTERIOR, servido em ANTERIOR, capturado AGORA, neste
+// mesmo navegador. Nao e arquivo no repositorio, e a diferenca importa: a
+// primeira versao gravava os hashes em scripts/referencia/ e o CI reprovou com
+// 693 de 2576 blocos "mudados" numa mudanca que nao tocou o desktop. Hash de
+// pixel nao atravessa maquina — ver o cabecalho de referencia-desktop.mjs.
+//
+// So roda em 'real' e nos dois impostores de desktop. Nos outros o lado ATUAL
+// sairia mutado e o ANTERIOR nao, e a guarda acusaria a mutacao do impostor
+// como se fosse vazamento de desktop: vermelho verdadeiro pelo motivo errado.
+//
+// QUANDO O DESKTOP MUDAR DE PROPOSITO, esta guarda fica vermelha, e e para
+// ficar. O jeito de passar por ela e ANTERIOR=nenhum naquela rodada, dito no
+// commit — nao existe "regenerar a referencia", que era o caminho por onde a
+// versao anterior desta guarda podia virar carimbo sem ninguem notar.
+if (MODO === 'real' || MODO === 'impostor-desktop' || MODO === 'impostor-desktop-cor') {
+  if (ANTERIOR === 'nenhum') {
+    console.log('- desktop pixel a pixel: PULADO, sem build anterior (ANTERIOR=nenhum)')
+  } else {
+    for (const W of LARGURAS) {
+      // o ANTERIOR nunca leva rota mutada: e ele que define o que "igual" quer
+      // dizer. Mutar os dois lados faria o impostor-desktop virar no-op.
+      let ref
+      try {
+        ref = await capturarReferencia(browser, ANTERIOR, W)
+      } catch (e) {
+        console.error(`INSTRUMENTO: o build anterior nao respondeu em ${ANTERIOR} (${e.message.split('\n')[0]})`)
+        process.exit(3)
+      }
+      const ctx = await browser.newContext({ viewport: { width: W, height: 900 }, deviceScaleFactor: 1 })
+      const page = await ctx.newPage()
+      await page.addInitScript(() => {
+        const orig = window.setInterval
+        window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
+      })
+      if (MODO !== 'real') await aplicarRotas(page)
+      const png = await capturar(page, BASE)
+      const agora = await assinar(page, png)
+      const r = comparar(ref, agora)
+      V(`desktop em ${W}px identico ao build anterior`, r.ok,
+        r.ok ? `0 de ${r.total} blocos de 64px` : `${r.motivo}` +
+          (r.diferentes.length ? ` | primeiros ${JSON.stringify(r.diferentes.slice(0, 4))}` : ''))
+      await ctx.close()
     }
-    const arq = `scripts/referencia/desktop-${W}.json`
-    if (!existsSync(arq)) { console.error(`INSTRUMENTO: falta ${arq}`); process.exit(3) }
-    const png = await capturar(page, BASE)
-    const agora = await assinar(page, png)
-    const r = comparar(JSON.parse(readFileSync(arq, 'utf8')), agora)
-    V(`desktop em ${W}px identico a referencia`, r.ok,
-      r.ok ? `0 de ${r.total} blocos de 64px` : `${r.motivo}` +
-        (r.diferentes.length ? ` | primeiros ${JSON.stringify(r.diferentes.slice(0, 4))}` : ''))
-    await ctx.close()
   }
 }
 

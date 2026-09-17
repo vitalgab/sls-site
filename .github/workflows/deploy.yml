@@ -61,6 +61,21 @@ jobs:
       - name: Instalar o Chromium do Playwright
         run: npx playwright install --with-deps chromium
 
+      - name: Build do commit anterior, referência do diff de desktop
+        # A guarda "o desktop não mudou" compara pixel a pixel com o build
+        # ANTERIOR, construído aqui, nesta mesma máquina. Guardar os hashes num
+        # arquivo do repositório não funciona: a rasterização de fonte do runner
+        # difere da caixa onde a referência foi gravada, e 693 de 2576 blocos
+        # "mudaram" numa alteração que não tocou uma linha do desktop.
+        run: |
+          ANTERIOR="${{ github.event.before }}"
+          if [ -z "$ANTERIOR" ] || [ "$ANTERIOR" = "0000000000000000000000000000000000000000" ] \
+             || ! git rev-parse --verify --quiet "$ANTERIOR^{commit}" > /dev/null; then
+            echo "github.event.before indisponível; caindo para HEAD~1"
+            ANTERIOR=HEAD~1
+          fi
+          bash scripts/build-anterior.sh "$ANTERIOR"
+
       - name: Servir o build no mesmo caminho da produção
         run: |
           mkdir -p .servir/sls-site
@@ -135,16 +150,26 @@ jobs:
                    impostor-gray impostor-pwa impostor-azos impostor-faixa \
                    impostor-overlay impostor-pilares impostor-grade impostor-ital \
                    impostor-veu impostor-cabecalho impostor-impar impostor-herdada \
-                   impostor-dourado impostor-retrato impostor-desktop impostor-zoom \
-                   impostor-campo; do
+                   impostor-dourado impostor-retrato impostor-desktop \
+                   impostor-desktop-cor impostor-zoom impostor-campo; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
-            if [ "$cod" -eq 0 ]; then
+            # Só exit 1 é "mordeu". Exit 3 é INSTRUMENTO — a mutação não achou
+            # alvo e o impostor nem chegou a rodar. Este laço aceitava 3 como
+            # mordida, e isso é o caso 115 escrito no próprio guardião: "não
+            # mordeu" e "não rodou" saíam com a mesma cara. Aconteceu de verdade
+            # ao escrever o impostor-desktop-cor — o minificador baixa a caixa do
+            # hex, a mutação procurou #003A70 e saiu 3. Teria passado como "ok".
+            if [ "$cod" -eq 1 ]; then
+              echo "ok: $m mordeu (exit 1)"
+            elif [ "$cod" -eq 0 ]; then
               echo "::error::o impostor $m passou VERDE — o smoke não discrimina"
               tail -25 "/tmp/$m.log"
               falhou=1
             else
-              echo "ok: $m mordeu (exit $cod)"
+              echo "::error::o impostor $m saiu $cod (instrumento), não reprovou nada"
+              tail -25 "/tmp/$m.log"
+              falhou=1
             fi
           done
           cod=0

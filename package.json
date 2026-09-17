@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "deploy": "echo 'Deploy nao se faz a mao. Empurre na main: .github/workflows/deploy.yml roda lint, build e smoke e so entao publica em gh-pages. Para republicar sem commit novo, use Actions > Deploy > Run workflow.' && exit 1",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "anterior": "bash scripts/build-anterior.sh"
   },
   "dependencies": {
     "react": "^19.2.7",
