@@ -62,6 +62,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Build do commit anterior, referência do diff de desktop
+        id: anterior
         # A guarda "o desktop não mudou" compara pixel a pixel com o build
         # ANTERIOR, construído aqui, nesta mesma máquina. Guardar os hashes num
         # arquivo do repositório não funciona: a rasterização de fonte do runner
@@ -76,13 +77,31 @@ jobs:
           fi
           bash scripts/build-anterior.sh "$ANTERIOR"
 
-      - name: Servir o build no mesmo caminho da produção
+      # ⚠️ O CNAME É O QUE MANTÉM O DOMÍNIO, e o passo de publicar faz
+      # force-push na gh-pages: um deploy sem ele apagaria o domínio do Pages
+      # sem erro nenhum. Ele nasce em public/, o Vite copia para dist/, e é
+      # dist/ que vira a gh-pages — três elos, e nenhum avisa se quebrar.
+      # Por isso o conteúdo é conferido AQUI, antes de servir e antes de
+      # publicar, e o deploy morre se não bater.
+      - name: O CNAME chegou ao dist
         run: |
-          mkdir -p .servir/sls-site
-          cp -r dist/. .servir/sls-site/
+          esperado='seulegadoseguro.com.br'
+          if [ ! -f dist/CNAME ]; then
+            echo "::error::dist/CNAME não existe — o deploy apagaria o domínio"; exit 1
+          fi
+          lido=$(tr -d '\r\n' < dist/CNAME)
+          if [ "$lido" != "$esperado" ]; then
+            echo "::error::dist/CNAME é '$lido', esperado '$esperado'"; exit 1
+          fi
+          echo "dist/CNAME = $lido ($(wc -c < dist/CNAME) bytes)"
+
+      - name: Servir o build na raiz, como o domínio serve
+        run: |
+          mkdir -p .servir
+          cp -r dist/. .servir/
           (cd .servir && nohup python3 -m http.server 8099 --bind 127.0.0.1 > /tmp/http.log 2>&1 &)
           for _ in $(seq 1 40); do
-            if curl -sf -o /dev/null http://127.0.0.1:8099/sls-site/; then
+            if curl -sf -o /dev/null http://127.0.0.1:8099/; then
               echo "servidor de pé"; exit 0
             fi
             sleep 1
@@ -91,27 +110,12 @@ jobs:
           cat /tmp/http.log
           exit 1
 
-      # ⚠️ EXCEÇÃO DECLARADA, VÁLIDA SÓ NESTE COMMIT. A seção de contato saiu,
-      # e uma seção inteira a menos muda o desktop de propósito. Medido contra
-      # o build de a1c8ec1, lendo a captura de página inteira linha a linha, em
-      # 1440 e em 1280 — os dois dão exatamente o mesmo:
-      #
-      #   altura 7122 -> 6252 (-870px, a seção removida)
-      #   do topo até y=5761 ............ IDÊNTICO, byte a byte
-      #   y=5760 / y=5761 ............... CTA em rgb(0,58,112) encosta no rodapé
-      #                                   em rgb(0,28,61). Sem tira solta, sem
-      #                                   faixa cinza sobrando no meio
-      #   do rodapé em diante ........... idêntico ao anterior deslocado 870px,
-      #                                   EXCETO 2 pixels em y=6093 (x 168-170),
-      #                                   no traço do ícone de telefone, com
-      #                                   delta de 5/255 — jitter de rasterização
-      #                                   de vetor, não mudança de conteúdo
-      #
-      # Digo "exceto 2 pixels" e não "idêntico" de propósito: 2 de 9.002.880 é
-      # desprezível, mas arredondar para zero é como se aprende a arredondar o
-      # resto. O próximo commit devolve esta linha ao normal.
+      # A guarda de desktop volta ao normal: trocar o base muda o CAMINHO dos
+      # arquivos, não o conteúdo, então nenhum pixel pode mudar. ANTERIOR sai do
+      # passo que construiu o commit de trás, porque a base DELE é outra e só o
+      # script sabe qual.
       - name: Smoke
-        run: ANTERIOR=nenhum node scripts/smoke.mjs
+        run: ANTERIOR='${{ steps.anterior.outputs.url }}' node scripts/smoke.mjs
 
       # Os impostores custam ~11 min dos ~17 do deploy, e só dizem algo quando a
       # SUÍTE muda: eles medem se o smoke sabe reprovar, não se o site está bom.
@@ -162,13 +166,8 @@ jobs:
       # smoke. Se algum passar verde, o deploy para aqui.
       - name: Os impostores têm de morder
         if: steps.mudou.outputs.rodar == 'sim'
-        # ⚠️ SÓ NESTE COMMIT: com o desktop mudando de propósito, o build atual
-        # já difere do anterior, e impostor-desktop e impostor-desktop-cor
-        # morderiam sem ter mutado nada. Apontando a referência para o próprio
-        # build, o modo sem mutação fica idêntico e a mordida volta a vir da
-        # mutação. Sai junto com a exceção do passo Smoke.
         env:
-          ANTERIOR: http://127.0.0.1:8099/sls-site/
+          ANTERIOR: ${{ steps.anterior.outputs.url }}
         run: |
           falhou=0
           for m in impostor-css impostor-rede impostor-wa impostor-em \
@@ -224,9 +223,18 @@ jobs:
           git commit -q \
             -m "deploy a partir de ${GITHUB_SHA}" \
             -m "Gerado por .github/workflows/deploy.yml. NÃO edite esta branch à mão: o próximo deploy sobrescreve tudo. A fonte está na main, no commit ${GITHUB_SHA}."
+          # O CNAME entrou no COMMIT? A conferência anterior olhou o disco; esta
+          # olha o que vai subir. São coisas diferentes: um .gitignore herdado,
+          # um `git add` que não pegou, e o arquivo fica no disco e fora da
+          # branch — e o domínio cai no deploy seguinte, sem erro nenhum.
+          if ! git show --name-only --pretty=format: HEAD | grep -qx 'CNAME'; then
+            echo "::error::CNAME não entrou no commit da gh-pages; abortando antes de apagar o domínio"
+            exit 1
+          fi
+          echo "CNAME no commit da gh-pages: $(git show HEAD:CNAME)"
           git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
           {
             echo "### Publicado"
             echo "gh-pages agora sai de \`${GITHUB_SHA}\`."
-            echo "Site: https://vitalgab.github.io/sls-site/"
+            echo "Site: https://seulegadoseguro.com.br/"
           } >> "$GITHUB_STEP_SUMMARY"

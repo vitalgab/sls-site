@@ -4,7 +4,7 @@
  *   node scripts/smoke.mjs                      # modo real
  *   MODO=impostor-css node scripts/smoke.mjs    # controle negativo
  *
- * Variaveis: SMOKE_URL (padrao http://127.0.0.1:8099/sls-site/), SHOTS_DIR, MODO.
+ * Variaveis: SMOKE_URL (padrao http://127.0.0.1:8099/), SHOTS_DIR, MODO.
  *
  * Codigos de saida:  0 = tudo verde | 1 = alguma assercao vermelha
  *                    3 = INSTRUMENTO (modo desconhecido ou mutacao sem alvo)
@@ -18,10 +18,10 @@ import { chromium } from 'playwright'
 import { existsSync } from 'node:fs'
 import { capturar, assinar, comparar, capturarReferencia, LARGURAS } from './referencia-desktop.mjs'
 
-const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/sls-site/'
+const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/'
 // build do commit anterior, para o diff de desktop. 'nenhum' desliga a guarda
 // e IMPRIME que desligou — o smoke de producao roda sem par para comparar.
-const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/sls-site/'
+const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/'
 const SHOTS = process.env.SHOTS_DIR || null
 const WA = '5571981018556'
 const TEL = '+5571981018556'
@@ -141,8 +141,8 @@ async function aplicarRotas (page) {
   if (MODO === 'impostor-pwa') {
     await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
       let t = await (await r.fetch()).text()
-      t = mutar(t, '<link rel="apple-touch-icon" href="/sls-site/icons/apple-touch-icon.png" />', '', 'link apple-touch-icon')
-      t = mutar(t, '<link rel="manifest" href="/sls-site/manifest.json" />', '', 'link manifest')
+      t = mutar(t, '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />', '', 'link apple-touch-icon')
+      t = mutar(t, '<link rel="manifest" href="/manifest.json" />', '', 'link manifest')
       t = mutar(t, '<meta name="theme-color" content="#003A70" />', '', 'meta theme-color')
       await r.fulfill({ body: t, contentType: 'text/html' })
     })
@@ -667,8 +667,19 @@ async function medirLogoCabecalho (page) {
   if (!pil) { console.error('INSTRUMENTO: .pilares-fig nao existe'); process.exit(3) }
   V('figura dos pilares e os 3 rotulos existem', pil.n === 3 && pil.img === true, `${pil.n} rotulos, img=${pil.img}`)
   if (pil.natural !== undefined) {
-    V('triangulo e local e decodifica', String(pil.src).includes('/sls-site/assets/triangulo-pilares.svg') && pil.natural > 0,
-      `${pil.src} naturalWidth=${pil.natural}`)
+    // ⚠️ ANTES ISTO CRAVAVA '/sls-site/assets/...'. A propriedade que importa
+    // nunca foi o CAMINHO, e sim que a imagem venha do NOSSO servidor — o teste
+    // existe contra hotlink. Com a troca de base o literal viraria mentira em
+    // dois sentidos: reprovaria o conserto hoje, e amanha passaria com qualquer
+    // origem se alguem so apagasse o prefixo. Agora afirma a ORIGEM.
+    //
+    // E o src aqui e o ATRIBUTO, que e relativo: '/assets/...'. Compara-lo cru
+    // com a origem reprovava o conserto — resolver contra o BASE e o que
+    // transforma "o caminho escrito no HTML" em "de onde o arquivo vem".
+    const srcPil = new URL(String(pil.src), BASE)
+    V('triangulo e local e decodifica',
+      srcPil.origin === new URL(BASE).origin && srcPil.pathname.endsWith('/assets/triangulo-pilares.svg') && pil.natural > 0,
+      `${srcPil.href} naturalWidth=${pil.natural}`)
     V('rotulos em Montserrat 600, caixa alta e com tracking',
       pil.fam.every(f => f === 'Montserrat') && pil.peso.every(w => w === '600') && pil.caixaAlta && pil.tracking,
       `${JSON.stringify(pil.fam)} ${JSON.stringify(pil.peso)} caixaAlta=${pil.caixaAlta} tracking=${pil.tracking}`)
@@ -862,7 +873,7 @@ async function medirLogoCabecalho (page) {
   // Mesmo motivo da faixa: um engasgo no CDN de terceiro deixava o hero — a
   // PRIMEIRA coisa que a pessoa ve — sem foto nenhuma, e sem erro no console.
   V('toda foto do hero e local e decodifica',
-    fotosHero.length === 3 && fotosHero.every(f => /\/sls-site\/assets\/hero-[123]\.webp$/.test(f.url) && f.status === 200 && f.larg > 0),
+    fotosHero.length === 3 && fotosHero.every(f => f.url.startsWith(new URL(BASE).origin) && /\/assets\/hero-[123]\.webp$/.test(f.url) && f.status === 200 && f.larg > 0),
     fotosHero.map(f => `${f.url.split('/').pop()} http=${f.status} w=${f.larg}`).join(' | '))
 
   const heroDesk = await contrasteDoHero(page)
@@ -918,7 +929,8 @@ async function medirLogoCabecalho (page) {
     V('o "— Missão da Seu Legado Seguro" saiu', !faixa.temSpan && !faixa.texto.includes('Missão'), faixa.temSpan ? 'ainda ha <span>' : 'sem span')
     // A foto tem de ser SERVIDA PELO PROPRIO SITE. Antes vinha do Unsplash: um
     // engasgo de terceiro apagava o fundo da faixa em producao.
-    V('foto da faixa e local (mesmo host)', !!faixa.url && faixa.url.includes('/sls-site/assets/faixa-familia.webp'), `${faixa.url}`)
+    V('foto da faixa e local (mesmo host)',
+    !!faixa.url && faixa.url.startsWith(new URL(BASE).origin) && faixa.url.endsWith('/assets/faixa-familia.webp'), `${faixa.url}`)
     V('foto da faixa responde e decodifica', faixa.status === 200 && faixa.larg > 0, `http=${faixa.status} naturalWidth=${faixa.larg}`)
 
     // A propriedade travada e o PISO da WCAG AA (4.5:1), nao o numero medido:
@@ -1179,7 +1191,7 @@ async function medirLogoCabecalho (page) {
       themeColor: c ? c.getAttribute('content') : null,
     }
   })
-  V('<link rel="manifest"> anunciado no DOM', !!pwa.manifest && pwa.manifest.endsWith('/sls-site/manifest.json'), `${pwa.manifest}`)
+  V('<link rel="manifest"> anunciado no DOM', !!pwa.manifest && pwa.manifest.endsWith('/manifest.json'), `${pwa.manifest}`)
   V('<link rel="apple-touch-icon"> anunciado e carrega', pwa.appleTouchLarg > 0,
     `${pwa.appleTouch} -> ${pwa.appleTouchLarg}px`)
   V('<meta name="theme-color"> com o navy da marca', pwa.themeColor === '#003A70', `${pwa.themeColor}`)

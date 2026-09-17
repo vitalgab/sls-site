@@ -107,8 +107,8 @@ export async function capturarReferencia (browser, url, W) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/sls-site/'
-  const ATUAL = process.env.ATUAL || 'http://127.0.0.1:8099/sls-site/'
+  const ANTERIOR = process.env.ANTERIOR || 'http://127.0.0.1:8098/'
+  const ATUAL = process.env.ATUAL || 'http://127.0.0.1:8099/'
   const b = await chromium.launch(opcoesNavegador())
   let falhou = 0
   for (const W of LARGURAS) {

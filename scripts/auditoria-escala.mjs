@@ -18,7 +18,7 @@ import { chromium } from 'playwright'
 import { writeFileSync } from 'node:fs'
 import { opcoesNavegador } from './referencia-desktop.mjs'
 
-const URLS = { antes: 'http://127.0.0.1:8098/sls-site/', depois: 'http://127.0.0.1:8099/sls-site/' }
+const URLS = { antes: 'http://127.0.0.1:8098/', depois: 'http://127.0.0.1:8099/' }
 const LARGS = [390, 360, 768, 1440]
 
 const medir = () => {

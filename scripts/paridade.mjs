@@ -19,8 +19,8 @@ import { chromium } from 'playwright'
 import { existsSync } from 'node:fs'
 import fs from 'node:fs'
 
-const AR = 'http://127.0.0.1:8101/sls-site/'
-const NOVO = 'http://127.0.0.1:8102/sls-site/'
+const AR = 'http://127.0.0.1:8101/'
+const NOVO = 'http://127.0.0.1:8102/'
 const SHOTS = process.env.SHOTS_DIR
 const LARG = Number(process.env.LARGURA || 1440)
 const MODO = process.env.MODO || 'real'   // real | impostor-texto | impostor-estilo

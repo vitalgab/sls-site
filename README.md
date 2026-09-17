@@ -1,6 +1,6 @@
 # Seu Legado Seguro — site institucional
 
-Site estático em React + Vite, publicado em <https://vitalgab.github.io/sls-site/>.
+Site estático em React + Vite, publicado em <https://seulegadoseguro.com.br>.
 
 ## Deploy: só pela `main`
 
@@ -28,24 +28,31 @@ git push origin backup-gh-pages-20260714:gh-pages --force
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/sls-site/  (o /sls-site/ é obrigatório)
+npm run dev      # http://localhost:5173/
 ```
 
-O `base` do Vite é `/sls-site/`, para casar com o caminho do GitHub Pages. Sem
-ele na URL, o dev server devolve 404.
+O `base` do Vite é `/`, porque o site é servido na raiz do domínio próprio. Era
+`/sls-site/` enquanto o endereço foi `vitalgab.github.io/sls-site/`.
+
+**O `public/CNAME` é o que mantém o domínio.** O Pages lê o CNAME da branch
+`gh-pages`, e o deploy faz `push -f` nela: um build sem esse arquivo apagaria o
+domínio, sem erro e sem aviso. Ele nasce em `public/`, o Vite copia para
+`dist/`, e `dist/` vira a `gh-pages` — três elos que ninguém vê falhar. Por isso
+o workflow confere duas vezes: o conteúdo em `dist/` antes de publicar, e a
+presença no COMMIT antes do push.
 
 ## Testes
 
 ```bash
 npm run build
-mkdir -p .servir/sls-site && cp -r dist/. .servir/sls-site/
+mkdir -p .servir && cp -r dist/. .servir/
 (cd .servir && python3 -m http.server 8099 --bind 127.0.0.1 &)
 
 npm run anterior                         # constrói o commit anterior em :8098
 npm run smoke                            # tem de sair 0
 MODO=impostor-css npm run smoke          # tem de sair 1 — o impostor precisa morder
 
-ANTERIOR=nenhum SMOKE_URL=https://vitalgab.github.io/sls-site/ npm run smoke
+ANTERIOR=nenhum SMOKE_URL=https://seulegadoseguro.com.br/ npm run smoke
 ```
 
 `npm run anterior` existe por causa da guarda de desktop, que compara a página
