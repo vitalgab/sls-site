@@ -135,7 +135,8 @@ jobs:
                    impostor-gray impostor-pwa impostor-azos impostor-faixa \
                    impostor-overlay impostor-pilares impostor-grade impostor-ital \
                    impostor-veu impostor-cabecalho impostor-impar impostor-herdada \
-                   impostor-dourado impostor-retrato; do
+                   impostor-dourado impostor-retrato impostor-desktop impostor-zoom \
+                   impostor-campo; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
             if [ "$cod" -eq 0 ]; then

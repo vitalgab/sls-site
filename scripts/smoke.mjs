@@ -15,7 +15,8 @@
  * script com exit 3, para "nao mordeu" nunca se confundir com "nao rodou".
  */
 import { chromium } from 'playwright'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { capturar, assinar, comparar, LARGURAS } from './referencia-desktop.mjs'
 
 const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:8099/sls-site/'
 const SHOTS = process.env.SHOTS_DIR || null
@@ -28,7 +29,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-gray', 'impostor-pwa', 'impostor-azos', 'impostor-faixa',
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
-  'impostor-retrato',
+  'impostor-retrato', 'impostor-desktop', 'impostor-zoom', 'impostor-campo',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -73,23 +74,11 @@ async function irPara (page, url) {
   }
 }
 
-async function abrir (w, h, opcoes = {}) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
-  const page = await ctx.newPage()
-  await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
-  // O carrossel do hero troca de foto sozinho a cada 5s. Medir contraste com ele
-  // girando nao da: a foto muda ENTRE os dois quadros da mascara, a diferenca
-  // passa a cobrir o hero inteiro e o "fundo mais claro" vira o cartao branco —
-  // 1,00:1 sobre rgb(255,255,255), que e assinatura de medicao quebrada.
-  // Entao ele fica congelado por padrao, e a rotacao tem bloco proprio, com o
-  // relogio correndo, mais abaixo.
-  if (opcoes.congelarCarrossel !== false) {
-    await page.addInitScript(() => {
-      const orig = window.setInterval
-      window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
-    })
-  }
-
+// Todas as mutacoes de artefato SERVIDO num lugar so. Extraido de abrir()
+// porque o bloco do golden master abre contexto proprio: sem chamar isto la, o
+// impostor-desktop mutaria a folha em todos os contextos MENOS naquele que ele
+// existe para morder.
+async function aplicarRotas (page) {
   if (MODO === 'impostor-rede') await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort())
   // Tira o eixo ITALICO do pedido ao Google Fonts. A face italica de verdade
   // nunca chega, o navegador SINTETIZA uma inclinacao por cisalhamento da
@@ -151,6 +140,29 @@ async function abrir (w, h, opcoes = {}) {
       t = mutar(t, '<link rel="manifest" href="/sls-site/manifest.json" />', '', 'link manifest')
       t = mutar(t, '<meta name="theme-color" content="#003A70" />', '', 'meta theme-color')
       await r.fulfill({ body: t, contentType: 'text/html' })
+    })
+  }
+  // Tres mutacoes na folha servida, uma por guarda nova desta rodada.
+  if (['impostor-desktop', 'impostor-zoom', 'impostor-campo'].includes(MODO)) {
+    await page.route(/\.css(\?|$)/, async r => {
+      let t = await (await r.fetch()).text()
+      // Os alvos sao o texto MINIFICADO, que e o que o navegador recebe. Escrevi
+      // os tres com o espacamento do fonte primeiro e os tres sairam em exit 3:
+      // "nao achou alvo". O mutar tem essa saida justamente para isso — impostor
+      // que nao encontra alvo nao pode virar impostor que nao mordeu.
+      if (MODO === 'impostor-desktop') {
+        // 1px a mais de padding em CADA secao do desktop. E a menor mudanca de
+        // layout que existe, e e de proposito: se a guarda nao pega 1px, ela nao
+        // pega nada.
+        t = mutar(t, '--space-secao:96px', '--space-secao:97px', 'padding das secoes no desktop')
+      } else if (MODO === 'impostor-zoom') {
+        // O jeito errado de encolher: amplia o pixel em vez de mudar o tamanho.
+        t = mutar(t, 'body{font-size:var(--fs-body)}', 'body{font-size:var(--fs-body);zoom:.85}', 'zoom no body')
+      } else {
+        // Campo abaixo de 16px: o iPhone da zoom sozinho ao tocar.
+        t = mutar(t, 'font-size:16px!important', 'font-size:14px!important', 'tamanho dos campos no celular')
+      }
+      await r.fulfill({ body: t, contentType: 'text/css' })
     })
   }
   if (MODO === 'impostor-css') {
@@ -242,6 +254,26 @@ async function abrir (w, h, opcoes = {}) {
       await r.fulfill({ body: t, contentType: 'text/javascript' })
     })
   }
+}
+
+async function abrir (w, h, opcoes = {}) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })
+  const page = await ctx.newPage()
+  await page.addInitScript(() => { window.__abertos = []; window.open = u => { window.__abertos.push(String(u)); return null } })
+  // O carrossel do hero troca de foto sozinho a cada 5s. Medir contraste com ele
+  // girando nao da: a foto muda ENTRE os dois quadros da mascara, a diferenca
+  // passa a cobrir o hero inteiro e o "fundo mais claro" vira o cartao branco —
+  // 1,00:1 sobre rgb(255,255,255), que e assinatura de medicao quebrada.
+  // Entao ele fica congelado por padrao, e a rotacao tem bloco proprio, com o
+  // relogio correndo, mais abaixo.
+  if (opcoes.congelarCarrossel !== false) {
+    await page.addInitScript(() => {
+      const orig = window.setInterval
+      window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
+    })
+  }
+
+  await aplicarRotas(page)
   return { ctx, page }
 }
 
@@ -1279,6 +1311,76 @@ async function medirLogoCabecalho (page) {
   V('retrato acima do texto e centrado em 390px', cit390.acima && cit390.centrada && cit390.nat > 0,
     `acima=${cit390.acima} centrada=${cit390.centrada} ${cit390.lado}px nat=${cit390.nat}`)
 
+  // ---- escala do celular ----
+  const esc = await page.evaluate(() => {
+    const px = v => Math.round(parseFloat(v) * 10) / 10
+    const campos = [...document.querySelectorAll('input, select, textarea')]
+      .map(e => ({ o: (e.placeholder || e.tagName).slice(0, 14), fs: px(getComputedStyle(e).fontSize) }))
+    // Area de TOQUE, nao caixa do elemento. As bolinhas do carrossel medem 8x8
+    // e crescem so a area, por ::after — um retangulo de 8px que responde a um
+    // toque de 44px esta certo, e medir getBoundingClientRect diria que nao.
+    const cai = e => {
+      const r = e.getBoundingClientRect()
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2
+      if (cy < 0 || cy > innerHeight) return null   // fora da viewport: nao da para sondar
+      const dentro = (x, y) => { const a = document.elementFromPoint(x, y); return !!a && (a === e || e.contains(a) || a.contains(e)) }
+      // CRUZ, nao quadrado. O botao flutuante do WhatsApp e um CIRCULO de 56px:
+      // os cantos de um quadrado de 44 caem a 29,7px do centro, fora do raio de
+      // 28 — a sonda de cantos reprovava um alvo que o dedo acerta inteiro.
+      // Dois pontos a 22px do centro, nos dois eixos, provam extensao >= 44px.
+      const ok = dentro(cx, cy) && dentro(cx - 22, cy) && dentro(cx + 22, cy) &&
+                 dentro(cx, cy - 22) && dentro(cx, cy + 22)
+      return { ok, w: Math.round(r.width), h: Math.round(r.height),
+        txt: (e.textContent || e.placeholder || e.getAttribute('aria-label') || '').trim().slice(0, 20),
+        tag: e.tagName.toLowerCase() }
+    }
+    // O CSS tem scroll-behavior: smooth. Com ele, scrollIntoView anima e o
+    // getBoundingClientRect logo depois le a posicao ANTIGA — a sonda caia fora
+    // da viewport e 37 dos 40 alvos eram silenciosamente pulados. "3 alvos
+    // conferidos" tem a mesma cara de "tudo certo".
+    const rolagemAntes = document.documentElement.style.scrollBehavior
+    document.documentElement.style.scrollBehavior = 'auto'
+    const alvos = []
+    for (const e of document.querySelectorAll('a, button, input, select, textarea')) {
+      const r = e.getBoundingClientRect()
+      if (r.width === 0 || r.height === 0) continue
+      e.scrollIntoView({ block: 'center' })
+      const m = cai(e)
+      if (m) alvos.push(m)
+    }
+    window.scrollTo(0, 0)
+    document.documentElement.style.scrollBehavior = rolagemAntes
+    const cs = getComputedStyle(document.body)
+    return {
+      body: px(cs.fontSize), zoom: cs.zoom, transform: cs.transform,
+      viewport: document.querySelector('meta[name=viewport]')?.content || '',
+      h1: px(getComputedStyle(document.querySelector('#inicio h1')).fontSize),
+      campos, alvos, pequenos: alvos.filter(a => !a.ok),
+    }
+  })
+  V('corpo entre 15 e 16px no celular', esc.body >= 15 && esc.body <= 16, `${esc.body}px`)
+  V('h1 do hero <= 34px no celular', esc.h1 <= 34, `${esc.h1}px`)
+  // 16px e o limiar do zoom automatico do iOS: abaixo disso o Safari aproxima a
+  // pagina sozinho ao tocar no campo, e nao volta.
+  V('todo campo de formulario >= 16px no celular', esc.campos.length > 0 && esc.campos.every(c => c.fs >= 16),
+    esc.campos.map(c => `${c.o}=${c.fs}`).join(' '))
+  // O piso de 30 nao e decoracao: "0 alvos pequenos" sobre 3 alvos conferidos
+  // e o mesmo texto verde de "0 sobre 40", e foi o que apareceu aqui quando a
+  // sonda estava quebrada.
+  if (esc.alvos.length < 30) {
+    console.error(`INSTRUMENTO: so ${esc.alvos.length} alvos foram sondados; a pagina tem dezenas`)
+    process.exit(3)
+  }
+  V('todo alvo responde a um toque de 44x44', esc.pequenos.length === 0,
+    `${esc.alvos.length} alvos sondados` + (esc.pequenos.length ? ` | PEQUENOS: ${JSON.stringify(esc.pequenos.slice(0, 5))}` : ''))
+  // A reducao e de TAMANHO, nao de escala: zoom e transform ampliam o pixel, o
+  // texto fica borrado e quem quiser aproximar com os dedos nao consegue.
+  V('sem zoom nem transform no corpo', (esc.zoom === '1' || esc.zoom === 'normal') && esc.transform === 'none',
+    `zoom=${esc.zoom} transform=${esc.transform}`)
+  V('meta viewport sem trava de escala',
+    /width=device-width/.test(esc.viewport) && !/maximum-scale|user-scalable\s*=\s*no/.test(esc.viewport),
+    esc.viewport)
+
   // Em 390px a grade do hero vira UMA coluna e o texto ocupa a largura inteira.
   // Com o veu horizontal de antes, o fim de cada linha caia sobre a parte clara
   // da foto: media em producao 2,04:1 e 2,02:1 em dois dos tres slides. Por isso
@@ -1323,6 +1425,42 @@ async function medirLogoCabecalho (page) {
     }
   }
   await ctx.close()
+}
+
+// ---------------- DESKTOP INTACTO, PIXEL A PIXEL ----------------
+// A rodada da escala mexeu em tokens que o desktop tambem usa. "Nao mexi no
+// desktop" nao e afirmacao que se faca por leitura de diff: os tres primeiros
+// vazamentos desta rodada passaram no meu olho e morreram AQUI — um token de
+// 19px mapeado para o de 18, um padding de 32 virando 28, e um seletor de icone
+// largo demais que pegava um <svg> de 18px.
+//
+// A referencia e o hash de cada bloco de 64x64 da pagina inteira, em
+// scripts/referencia/. Bloco diferente <=> pixel diferente, entao "zero blocos"
+// e literalmente "0% de pixels diferentes".
+{
+  for (const W of LARGURAS) {
+    const ctx = await browser.newContext({ viewport: { width: W, height: 900 }, deviceScaleFactor: 1 })
+    const page = await ctx.newPage()
+    await page.addInitScript(() => {
+      const orig = window.setInterval
+      window.setInterval = (fn, t, ...r) => (t === 5000 ? 0 : orig(fn, t, ...r))
+    })
+    if (MODO !== 'real' && MODO !== 'estresse') {
+      // os impostores mutam a folha; sem repetir o route aqui, o contexto novo
+      // receberia o artefato original e a guarda ficaria cega justamente no modo
+      // que deveria morde-la
+      await aplicarRotas(page)
+    }
+    const arq = `scripts/referencia/desktop-${W}.json`
+    if (!existsSync(arq)) { console.error(`INSTRUMENTO: falta ${arq}`); process.exit(3) }
+    const png = await capturar(page, BASE)
+    const agora = await assinar(page, png)
+    const r = comparar(JSON.parse(readFileSync(arq, 'utf8')), agora)
+    V(`desktop em ${W}px identico a referencia`, r.ok,
+      r.ok ? `0 de ${r.total} blocos de 64px` : `${r.motivo}` +
+        (r.diferentes.length ? ` | primeiros ${JSON.stringify(r.diferentes.slice(0, 4))}` : ''))
+    await ctx.close()
+  }
 }
 
 // ---------------- CARROSSEL, COM O RELOGIO CORRENDO ----------------

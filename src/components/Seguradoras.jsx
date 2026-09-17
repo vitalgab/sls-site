@@ -69,7 +69,7 @@ function CartaoSeguradora({ p }) {
           />
         ) : (
           <span style={{
-            fontSize: 14, fontWeight: 700, letterSpacing: 0.2,
+            fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: 0.2,
             color: 'var(--navy)', textAlign: 'center', lineHeight: 1.25,
           }}>{p.nome}</span>
         )}
@@ -97,7 +97,7 @@ export default function Seguradoras() {
       <div className="container">
         <p style={{
           textAlign: 'center',
-          fontSize: 11, fontWeight: 700, letterSpacing: 3,
+          fontSize: 'var(--fs-eyebrow)', fontWeight: 700, letterSpacing: 3,
           textTransform: 'uppercase', color: 'var(--navy)',
           opacity: 0.4, marginBottom: 44,
         }}>
@@ -107,11 +107,11 @@ export default function Seguradoras() {
         {/* auto-fit deixava o navegador escolher, e em várias larguras a conta
             dele deixava 1 ou 2 cartões sozinhos na última linha. Agora o número
             de colunas vem de N, e toda linha fecha cheia. */}
-        <div className="seguradoras-grid" style={{ display: 'grid', gap: 14 }}>
+        <div className="seguradoras-grid" style={{ display: 'grid', gap: 'var(--gap-p)' }}>
           {parceiras.map(p => <CartaoSeguradora key={p.nome} p={p} />)}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 13, color: 'var(--gray-600)' }}>
+        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 'var(--fs-xs)', color: 'var(--gray-600)' }}>
           + diversas outras seguradoras e administradoras
         </p>
       </div>

@@ -13,7 +13,7 @@ export default function Footer() {
               alt="Seu Legado Seguro"
               style={{ height: 90, width: 'auto', marginBottom: 22 }}
             />
-            <p style={{ fontSize: 14, lineHeight: 1.85, maxWidth: 300, marginBottom: 24 }}>
+            <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.85, maxWidth: 300, marginBottom: 24 }}>
               Corretora de seguros especializada em proteção para médicos, advogados e profissionais liberais em todo o Brasil.
             </p>
             <a
@@ -21,7 +21,7 @@ export default function Footer() {
               target="_blank" rel="noopener"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                color: '#4ade80', fontWeight: 600, fontSize: 14, transition: 'opacity 0.2s',
+                color: '#4ade80', fontWeight: 600, fontSize: 'var(--fs-sm)', transition: 'opacity 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
@@ -36,7 +36,7 @@ export default function Footer() {
               href={`tel:${TELEFONE_TEL}`}
               style={{
                 display: 'flex', width: 'fit-content', alignItems: 'center', gap: 8, marginTop: 12,
-                color: 'rgba(255,255,255,0.6)', fontSize: 13, transition: 'color 0.2s',
+                color: 'rgba(255,255,255,0.6)', fontSize: 'var(--fs-xs)', transition: 'color 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.color = 'white'}
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
@@ -52,14 +52,14 @@ export default function Footer() {
           <div>
             <h4 style={{
               color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
-              fontSize: 11, marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
+              fontSize: 'var(--fs-eyebrow)', marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
             }}>
               Produtos
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {['Plano de Saúde', 'Seguro de Vida', 'Previdência Privada', 'RC Profissional', 'Demais Ramos'].map(item => (
                 <li key={item}>
-                  <a href="#produtos" style={{ fontSize: 14, transition: 'color 0.2s' }}
+                  <a href="#produtos" style={{ fontSize: 'var(--fs-sm)', transition: 'color 0.2s' }}
                     onMouseEnter={e => e.target.style.color = 'white'}
                     onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.6)'}
                   >{item}</a>
@@ -72,7 +72,7 @@ export default function Footer() {
           <div>
             <h4 style={{
               color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
-              fontSize: 11, marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
+              fontSize: 'var(--fs-eyebrow)', marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
             }}>
               Links
             </h4>
@@ -83,7 +83,7 @@ export default function Footer() {
                 { label: 'Contato', href: '#contato' },
               ].map(item => (
                 <li key={item.label}>
-                  <a href={item.href} style={{ fontSize: 14, transition: 'color 0.2s' }}
+                  <a href={item.href} style={{ fontSize: 'var(--fs-sm)', transition: 'color 0.2s' }}
                     onMouseEnter={e => e.target.style.color = 'white'}
                     onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.6)'}
                   >{item.label}</a>
@@ -99,8 +99,8 @@ export default function Footer() {
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
         }}>
-          <p style={{ fontSize: 13 }}>© 2025 Seu Legado Seguro · Todos os direitos reservados.</p>
-          <p style={{ fontSize: 13 }}>Corretor SUSEP nº {SUSEP}</p>
+          <p style={{ fontSize: 'var(--fs-xs)' }}>© 2025 Seu Legado Seguro · Todos os direitos reservados.</p>
+          <p style={{ fontSize: 'var(--fs-xs)' }}>Corretor SUSEP nº {SUSEP}</p>
         </div>
       </div>
 

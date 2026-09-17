@@ -15,7 +15,7 @@ const pilares = [
 const diferenciais = [
   {
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg style={{ width: 'var(--icone-m)', height: 'var(--icone-m)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
       </svg>
     ),
@@ -24,7 +24,7 @@ const diferenciais = [
   },
   {
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg style={{ width: 'var(--icone-m)', height: 'var(--icone-m)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
@@ -33,7 +33,7 @@ const diferenciais = [
   },
   {
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg style={{ width: 'var(--icone-m)', height: 'var(--icone-m)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
       </svg>
     ),
@@ -42,7 +42,7 @@ const diferenciais = [
   },
   {
     icon: (
-      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <svg style={{ width: 'var(--icone-m)', height: 'var(--icone-m)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
       </svg>
     ),
@@ -56,7 +56,7 @@ export default function Sobre() {
     <>
       {/* Faixa parallax com a missão */}
       <div className="faixa-parallax" style={{
-        height: 300,
+        height: 'var(--h-faixa)',
         position: 'relative',
         overflow: 'hidden',
         backgroundImage: `url('${FAIXA_IMG}')`,
@@ -72,7 +72,7 @@ export default function Sobre() {
           <div style={{ textAlign: 'center', padding: '0 24px', maxWidth: 720 }}>
             <p style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(20px, 2.4vw, 32px)',
+              fontSize: 'var(--fs-faixa)',
               fontStyle: 'italic',
               fontWeight: 300,
               color: '#fff',
@@ -100,7 +100,7 @@ export default function Sobre() {
             <div>
               <span className="section-eyebrow">Por que a Seu Legado?</span>
               <h2 className="section-title">Uma corretora que pensa em você, não na venda</h2>
-              <p style={{ fontSize: 16, color: 'var(--gray-600)', lineHeight: 1.8, marginBottom: 36 }}>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--gray-600)', lineHeight: 1.8, marginBottom: 36 }}>
                 A Seu Legado Seguro tem três pilares muito claros:
               </p>
 
@@ -109,15 +109,15 @@ export default function Sobre() {
                   <div key={pi.n} style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
                     <span style={{
                       fontFamily: 'var(--font-display)',
-                      fontSize: 13, fontWeight: 700, color: 'var(--navy)',
+                      fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--navy)',
                       opacity: 0.35, letterSpacing: 1, flexShrink: 0, paddingTop: 2,
                     }}>{pi.n}</span>
                     <div>
                       <div style={{
                         fontFamily: 'var(--font-display)',
-                        fontSize: 19, fontWeight: 600, color: 'var(--navy)', marginBottom: 4,
+                        fontSize: 'var(--fs-pilar)', fontWeight: 600, color: 'var(--navy)', marginBottom: 4,
                       }}>{pi.label}</div>
-                      <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.7 }}>{pi.desc}</p>
+                      <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--gray-600)', lineHeight: 1.7 }}>{pi.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -138,12 +138,12 @@ export default function Sobre() {
 
           </div>
 
-          <div className="diferenciais-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <div className="diferenciais-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--gap-m)' }}>
             {diferenciais.map(d => (
               <div key={d.title} className="dif-card" style={{
                 background: 'var(--gray-50)',
                 borderRadius: 'var(--radius-lg)',
-                padding: '28px 24px',
+                padding: 'var(--space-card) var(--space-card-x)',
                 border: '1.5px solid var(--gray-200)',
                 transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
               }}>
@@ -156,10 +156,10 @@ export default function Sobre() {
                 </div>
                 <h4 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 18, fontWeight: 600, color: 'var(--navy)',
+                  fontSize: 'var(--fs-h4)', fontWeight: 600, color: 'var(--navy)',
                   marginBottom: 10, lineHeight: 1.3,
                 }}>{d.title}</h4>
-                <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.7 }}>{d.desc}</p>
+                <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--gray-600)', lineHeight: 1.7 }}>{d.desc}</p>
               </div>
             ))}
           </div>
@@ -208,13 +208,13 @@ export default function Sobre() {
           }
           .citacao-texto {
             font-family: var(--font-display);
-            font-size: clamp(21px, 2.4vw, 32px);
+            font-size: var(--fs-citacao);
             font-weight: 300; font-style: normal;
             color: #fff; line-height: 1.45;
             margin: 0; padding: 0; border-left: none;
           }
           .citacao-assinatura {
-            margin-top: 20px; font-size: 13px; font-weight: 600;
+            margin-top: 20px; font-size: var(--fs-xs); font-weight: 600;
             letter-spacing: 2px; text-transform: uppercase; color: #C9A84C;
           }
           @media (max-width: 768px) {
@@ -238,7 +238,7 @@ export default function Sobre() {
             grid-template-columns: auto auto auto;
             align-items: center; justify-items: center;
             align-content: center;
-            column-gap: 14px; row-gap: 14px;
+            column-gap: var(--gap-p); row-gap: var(--gap-p);
             height: 100%;
           }
           .pilares-img {

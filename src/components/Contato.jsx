@@ -18,12 +18,12 @@ export default function Contato() {
       <section style={{ background: 'var(--navy)', padding: '80px 0' }}>
         <div className="container" style={{ textAlign: 'center' }}>
           <span style={{
-            display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: 3,
+            display: 'inline-block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700, letterSpacing: 3,
             textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 16,
           }}>Próximo passo</span>
           <h2 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(26px, 3.6vw, 42px)',
+            fontSize: 'var(--fs-h2-contato)',
             fontWeight: 300,
             color: 'var(--white)',
             marginBottom: 18,
@@ -33,7 +33,7 @@ export default function Contato() {
           </h2>
           <p style={{
             color: 'rgba(255,255,255,0.65)',
-            fontSize: 17, lineHeight: 1.75,
+            fontSize: 'var(--fs-lead)', lineHeight: 1.75,
             marginBottom: 40, maxWidth: 500, margin: '0 auto 40px',
           }}>
             Fale com um corretor que vai entender a sua necessidade e indicar a cobertura certa — sem jargão, sem pressão.
@@ -43,7 +43,7 @@ export default function Contato() {
               className="btn-primary"
               href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20consultoria%20gratuita`}
               target="_blank" rel="noopener"
-              style={{ background: 'var(--white)', color: 'var(--navy)', border: 'none', fontSize: 16, padding: '15px 32px' }}
+              style={{ background: 'var(--white)', color: 'var(--navy)', border: 'none', fontSize: 'var(--fs-body)', padding: '15px 32px' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
@@ -63,10 +63,10 @@ export default function Contato() {
         <div className="container" style={{ maxWidth: 460, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <span className="section-eyebrow">Contato</span>
-            <h2 className="section-title" style={{ margin: '0 auto 8px', fontSize: 'clamp(22px, 3vw, 30px)' }}>
+            <h2 className="section-title" style={{ margin: '0 auto 8px', fontSize: 'var(--fs-h2-form)' }}>
               Prefere preencher um formulário?
             </h2>
-            <p style={{ color: 'var(--gray-600)', fontSize: 13 }}>
+            <p style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-xs)' }}>
               Preencha abaixo e entraremos em contato via WhatsApp.
             </p>
           </div>
@@ -86,13 +86,13 @@ export default function Contato() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--navy)', marginBottom: 10 }}>Mensagem enviada!</h3>
-              <p style={{ color: 'var(--gray-600)', fontSize: 15 }}>Você foi redirecionado para o WhatsApp. Responderemos em breve.</p>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h3-ok)', color: 'var(--navy)', marginBottom: 10 }}>Mensagem enviada!</h3>
+              <p style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-btn)' }}>Você foi redirecionado para o WhatsApp. Responderemos em breve.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{
               display: 'flex', flexDirection: 'column', gap: 12,
-              background: 'var(--white)', padding: '28px 24px', borderRadius: 'var(--radius-lg)',
+              background: 'var(--white)', padding: 'var(--space-card) var(--space-card-x)', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--gray-200)', boxShadow: 'var(--shadow)',
             }}>
               {[
@@ -102,7 +102,7 @@ export default function Contato() {
               ].map(f => (
                 <div key={f.name}>
                   <label style={{
-                    display: 'block', fontSize: 11, fontWeight: 700,
+                    display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
                     color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                   }}>{f.label} {f.required && <span style={{ color: 'var(--navy)' }}>*</span>}</label>
                   <input
@@ -114,7 +114,7 @@ export default function Contato() {
                     style={{
                       width: '100%', padding: '10px 14px',
                       border: '1.5px solid var(--gray-200)',
-                      borderRadius: 'var(--radius)', fontSize: 13,
+                      borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
                       outline: 'none', transition: 'border-color 0.2s',
                       fontFamily: 'var(--font-body)',
                       color: 'var(--gray-800)',
@@ -127,7 +127,7 @@ export default function Contato() {
 
               <div>
                 <label style={{
-                  display: 'block', fontSize: 11, fontWeight: 700,
+                  display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
                   color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                 }}>Tenho interesse em</label>
                 <select
@@ -136,7 +136,7 @@ export default function Contato() {
                   style={{
                     width: '100%', padding: '10px 14px',
                     border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 13,
+                    borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
                     outline: 'none', background: 'white',
                     fontFamily: 'var(--font-body)',
                     color: form.interesse ? 'var(--gray-800)' : '#94a3b8',
@@ -153,7 +153,7 @@ export default function Contato() {
 
               <div>
                 <label style={{
-                  display: 'block', fontSize: 11, fontWeight: 700,
+                  display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
                   color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
                 }}>Mensagem (opcional)</label>
                 <textarea
@@ -164,7 +164,7 @@ export default function Contato() {
                   style={{
                     width: '100%', padding: '10px 14px',
                     border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 13,
+                    borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
                     outline: 'none', resize: 'vertical',
                     fontFamily: 'var(--font-body)',
                   }}
@@ -173,7 +173,7 @@ export default function Contato() {
                 />
               </div>
 
-              <button type="submit" className="btn-primary" style={{ justifyContent: 'center', fontSize: 14, padding: '12px' }}>
+              <button type="submit" className="btn-primary" style={{ justifyContent: 'center', fontSize: 'var(--fs-sm)', padding: '12px' }}>
                 Enviar via WhatsApp
               </button>
             </form>

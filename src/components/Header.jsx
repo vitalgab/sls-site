@@ -43,7 +43,7 @@ export default function Header() {
           {navLinks.map(link => (
             <a key={link.href} href={link.href} style={{
               color: 'var(--gray-600)',
-              fontSize: 14,
+              fontSize: 'var(--fs-sm)',
               fontWeight: 500,
               letterSpacing: 0.2,
               transition: 'color 0.2s',
@@ -58,7 +58,7 @@ export default function Header() {
             className="btn-primary"
             href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20cotação`}
             target="_blank" rel="noopener"
-            style={{ padding: '11px 22px', fontSize: 14 }}
+            style={{ padding: '11px 22px', fontSize: 'var(--fs-sm)' }}
           >
             Solicitar cotação
           </a>
@@ -88,7 +88,7 @@ export default function Header() {
         }}>
           {navLinks.map(link => (
             <a key={link.href} href={link.href}
-              style={{ color: 'var(--gray-800)', fontSize: 16, fontWeight: 500 }}
+              style={{ color: 'var(--gray-800)', fontSize: 'var(--fs-body)', fontWeight: 500 }}
               onClick={() => setMenuOpen(false)}
             >
               {link.label}

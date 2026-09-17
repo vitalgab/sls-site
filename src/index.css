@@ -20,6 +20,136 @@
   --shadow-lg: 0 12px 48px rgba(0,30,65,0.20);
   --font-body: 'Inter', sans-serif;
   --font-display: 'Montserrat', 'Inter', sans-serif;
+
+  /* ESCALA. Um valor por tamanho, e os tres degraus logo abaixo. Os valores
+     daqui sao os do DESKTOP e nao mudaram nada: e por isso que >=1024px sai
+     pixel a pixel igual ao que estava no ar.
+     Os nomes vao por PAPEL, mas foram atribuidos por VALOR — cada medida que
+     existia virou o token do seu tamanho. Assim a troca e mecanica e
+     conferivel, em vez de depender de eu adivinhar a intencao de cada 13px. */
+  --fs-h1: clamp(34px, 5vw, 62px);
+  --fs-h2: clamp(26px, 3.2vw, 40px);
+  --fs-h3: 21px;
+  --fs-h4: 18px;
+  --fs-lead: 17px;
+  --fs-body: 16px;
+  --fs-btn: 15px;
+  --fs-sm: 14px;
+  --fs-xs: 13px;
+  --fs-xxs: 12px;
+  --fs-eyebrow: 11px;
+  --fs-nano: 10px;
+  --fs-micro: 9px;
+  --fs-citacao: clamp(21px, 2.4vw, 32px);
+  --fs-faixa: clamp(20px, 2.4vw, 32px);
+  --fs-h2-contato: clamp(26px, 3.6vw, 42px);
+  --fs-h2-form: clamp(22px, 3vw, 30px);
+  --fs-pilar: 19px;
+  --fs-h3-form: 22px;
+  --fs-h3-ok: 24px;
+
+  --space-secao: 96px;
+  --space-container: 28px;
+  --space-card: 28px;
+  --space-card-x: 24px;
+  --gap-g: 24px;
+  --gap-m: 20px;
+  --gap-p: 14px;
+
+  --h-persona: 300px;
+  --h-faixa: 300px;
+  --icone-g: 28px;
+  --icone-m: 26px;
+  --icone-prod: 32px;
+  --caixa-icone: 56px;
+  --space-card-b: 32px;
+}
+
+/* TABLET (560-1023). Metade da reducao do celular: ~9% na tipografia, ~17% nos
+   espacos. O recorte vai ate 1023 e nao ate 768 de proposito — um iPad em
+   retrato tem 768 de largura e em paisagem 1024, e a faixa de 769 a 1023 estava
+   recebendo a escala de desktop. */
+@media (max-width: 1023px) {
+  :root {
+    --fs-h1: clamp(30px, 4.6vw, 44px);
+    --fs-h2: 24px;
+    --fs-h3: 19px;
+    --fs-h4: 17px;
+    --fs-lead: 16px;
+    --fs-body: 15.5px;
+    --fs-btn: 15px;
+    --fs-sm: 13.5px;
+    --fs-xs: 12.5px;
+    --fs-xxs: 11.5px;
+    --fs-eyebrow: 11px;
+    --fs-nano: 10px;
+    --fs-micro: 9px;
+    --fs-citacao: 20px;
+    --fs-faixa: 19px;
+    --fs-h2-contato: 25px;
+    --fs-h2-form: 21px;
+    --fs-pilar: 18px;
+    --fs-h3-form: 20px;
+    --fs-h3-ok: 22px;
+
+    --space-secao: 64px;
+    --space-container: 24px;
+    --space-card: 24px;
+    --space-card-x: 20px;
+    --gap-g: 20px;
+    --gap-m: 18px;
+    --gap-p: 12px;
+
+    --h-persona: 260px;
+    --h-faixa: 270px;
+    --icone-g: 26px;
+    --icone-m: 24px;
+    --icone-prod: 29px;
+    --caixa-icone: 52px;
+    --space-card-b: 28px;
+  }
+}
+
+/* CELULAR (<560). ~17% menor na tipografia e ~30% nos espacos. */
+@media (max-width: 559px) {
+  :root {
+    --fs-h1: 28px;
+    --fs-h2: 22px;
+    --fs-h3: 17.5px;
+    --fs-h4: 16px;
+    --fs-lead: 14.5px;
+    --fs-body: 15px;
+    --fs-btn: 14.5px;
+    --fs-sm: 12.5px;
+    --fs-xs: 12px;
+    --fs-xxs: 11px;
+    --fs-eyebrow: 10px;
+    --fs-nano: 9.5px;
+    --fs-micro: 9px;
+    --fs-citacao: 19px;
+    --fs-faixa: 18px;
+    --fs-h2-contato: 22px;
+    --fs-h2-form: 19px;
+    --fs-pilar: 16.5px;
+    --fs-h3-form: 18.5px;
+    --fs-h3-ok: 20px;
+
+    --space-secao: 48px;
+    --space-container: 18px;
+    --space-card: 18px;
+    --space-card-x: 16px;
+    --gap-g: 14px;
+    --gap-m: 14px;
+    --gap-p: 10px;
+
+    --h-persona: 210px;
+    --h-faixa: 240px;
+    --icone-g: 24px;
+    --icone-m: 22px;
+    --icone-prod: 26px;
+    --caixa-icone: 46px;
+    --space-card-b: 22px;
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,7 +167,7 @@ a { text-decoration: none; color: inherit; }
 .container {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 var(--space-container);
 }
 
 /* Primary: navy solido */
@@ -48,7 +178,7 @@ a { text-decoration: none; color: inherit; }
   background: var(--navy);
   color: var(--white);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--fs-btn);
   font-weight: 600;
   padding: 14px 28px;
   border-radius: var(--radius);
@@ -67,7 +197,7 @@ a { text-decoration: none; color: inherit; }
   background: transparent;
   color: var(--navy);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--fs-btn);
   font-weight: 500;
   padding: 12px 26px;
   border-radius: var(--radius);
@@ -86,7 +216,7 @@ a { text-decoration: none; color: inherit; }
   background: transparent;
   color: var(--white);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--fs-btn);
   font-weight: 500;
   padding: 12px 26px;
   border-radius: var(--radius);
@@ -97,7 +227,7 @@ a { text-decoration: none; color: inherit; }
 }
 .btn-outline-white:hover { background: rgba(255,255,255,0.1); border-color: var(--white); }
 
-section { padding: 96px 0; }
+section { padding: var(--space-secao) 0; }
 
 /* Tipografia de display da marca: Montserrat, peso leve, sem inclinacao. */
 h1, h2, h3, h4 {
@@ -123,7 +253,7 @@ h1 strong, h2 strong, h3 strong {
 .section-label {
   display: inline-block;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -134,7 +264,7 @@ h1 strong, h2 strong, h3 strong {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: clamp(26px, 3.2vw, 40px);
+  font-size: var(--fs-h2);
   font-weight: 300;
   color: var(--navy);
   margin-bottom: 16px;
@@ -144,13 +274,67 @@ h1 strong, h2 strong, h3 strong {
 
 .section-sub {
   font-family: var(--font-body);
-  font-size: 17px;
+  font-size: var(--fs-lead);
   color: var(--gray-600);
   max-width: 520px;
   line-height: 1.8;
 }
 
-@media (max-width: 768px) {
-  section { padding: 64px 0; }
-  .container { padding: 0 20px; }
+/* O corpo passa a seguir o token: e dele que herdam os textos sem tamanho
+   proprio. No desktop o token vale 16px, que e o que o navegador ja usava. */
+body { font-size: var(--fs-body); }
+
+/* PROIBIDO AQUI: zoom, transform: scale no body ou no container, e mexer na
+   meta viewport. Isso amplia o pixel em vez de mudar o tamanho — texto fica
+   borrado, quem quer aumentar nao consegue, e o iOS trata como pagina de
+   desktop. A reducao e feita pelos tokens acima, em px de verdade. */
+
+/* CAMPO DE FORMULARIO COM MENOS DE 16px FAZ O iPHONE DAR ZOOM SOZINHO ao tocar,
+   e o zoom nao volta. E o efeito exato que esta rodada existe para eliminar,
+   entao aqui os campos ANDAM NA CONTRAMAO da reducao: eles crescem no celular.
+   No desktop nada muda — a regra so existe abaixo de 1024. */
+@media (max-width: 1023px) {
+  /* O !important existe porque o tamanho dos campos esta em style INLINE no JSX,
+     e inline vence folha de estilo. Sem ele a regra nao pegava: medi os campos
+     em 12,5px depois de escrever a regra, que e exatamente o defeito que ela
+     deveria impedir. */
+  input, select, textarea { font-size: 16px !important; }
 }
+
+/* ALVO DE TOQUE. 44px e o minimo da diretriz da Apple e o que a WCAG 2.2 pede
+   como AAA. Vale so no toque: no desktop o ponteiro do mouse tem precisao de
+   1px e alargar tudo mudaria o layout que precisa ficar intacto. */
+@media (max-width: 1023px) {
+  /* 46 e nao 44: a sonda da suite toca o centro e mais quatro pontos a 22px
+     dele. Num elemento de exatos 44px esses pontos caem na BORDA, e borda e
+     onde elementFromPoint fica ambiguo. Com 46 a folga e de 1px para cada lado
+     e a medida deixa de depender de arredondamento. */
+  .btn-primary, .btn-outline, .btn-outline-white,
+  input, select, textarea, button:not([aria-label^="Slide"]) {
+    min-height: 46px;
+  }
+  /* o botao do menu tinha 40px de largura */
+  .mobile-menu-btn { min-width: 46px; }
+  /* o link do logo era do tamanho da imagem: 185x28 */
+  header a:has(img) { display: flex; align-items: center; min-height: 46px; }
+  /* os links de acao dos cards de produto ficavam em 41px */
+  #produtos a { min-height: 46px; display: inline-flex; align-items: center; }
+  /* os links do rodape tinham 15 a 20px de altura, em coluna e colados */
+  footer a { display: inline-flex; align-items: center; min-height: 46px; }
+  /* As bolinhas do carrossel medem 8x8 e 28x8 DE PROPOSITO — sao um indicador,
+     nao um botao. Por isso elas ficam FORA do min-height acima: com ele viraram
+     tres barras verticais de 46px, o que eu so vi na captura lado a lado.
+     Em vez de incha-las, o ::after estende a AREA DE TOQUE sem mover nem um
+     pixel do que se ve. */
+  #inicio button[aria-label^="Slide"] { position: relative; }
+  #inicio button[aria-label^="Slide"]::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 46px; height: 46px; transform: translate(-50%, -50%);
+  }
+  /* E as areas nao podem se SOBREPOR: duas bolinhas a 8px uma da outra com area
+     de 46px dividem metade do espaco, e ai o toque acerta a vizinha. Com 38px de
+     intervalo os centros ficam a 46px (8+38) e a 56px (18+38) — cada area tem o
+     seu lugar. O que se ve continua sendo a barrinha de 8px. */
+  .hero-bolinhas { gap: 38px !important; }
+}
+

@@ -31,7 +31,7 @@ function FormularioCotacao() {
     padding: '12px 14px',
     border: '1.5px solid #CDD9EA',
     borderRadius: 8,
-    fontSize: 14,
+    fontSize: 'var(--fs-sm)',
     outline: 'none',
     fontFamily: 'var(--font-body)',
     color: '#1C2E45',
@@ -44,12 +44,12 @@ function FormularioCotacao() {
       <div style={{ marginBottom: 8 }}>
         <h3 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 22, fontWeight: 400, color: 'var(--navy)',
+          fontSize: 'var(--fs-h3-form)', fontWeight: 400, color: 'var(--navy)',
           lineHeight: 1.2, marginBottom: 6,
         }}>
           Solicite uma cotação grátis
         </h3>
-        <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--gray-600)', lineHeight: 1.5 }}>
           Resposta em até 24h · Sem compromisso
         </p>
       </div>
@@ -95,7 +95,7 @@ function FormularioCotacao() {
         <option>Mais de um produto</option>
       </select>
 
-      <button type="submit" className="btn-primary" style={{ justifyContent: 'center', marginTop: 4, padding: '14px 24px', fontSize: 15 }}>
+      <button type="submit" className="btn-primary" style={{ justifyContent: 'center', marginTop: 4, padding: '14px 24px', fontSize: 'var(--fs-btn)' }}>
         {iconeWhats}
         Enviar pelo WhatsApp
       </button>
@@ -104,7 +104,7 @@ function FormularioCotacao() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B6280" strokeWidth="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
-        <span style={{ fontSize: 11, color: 'var(--gray-600)' }}>
+        <span style={{ fontSize: 'var(--fs-eyebrow)', color: 'var(--gray-600)' }}>
           Seus dados são protegidos e nunca compartilhados
         </span>
       </div>
@@ -156,7 +156,7 @@ export default function Hero() {
         <div>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(34px, 5vw, 62px)',
+            fontSize: 'var(--fs-h1)',
             fontWeight: 300,
             color: '#ffffff',
             lineHeight: 1.1,
@@ -168,7 +168,7 @@ export default function Hero() {
           </h1>
 
           <p style={{
-            fontSize: 17,
+            fontSize: 'var(--fs-lead)',
             color: 'rgba(255,255,255,0.72)',
             lineHeight: 1.8,
             marginBottom: 36,
@@ -182,17 +182,17 @@ export default function Hero() {
               className="btn-primary"
               href={`https://wa.me/${WA_NUMBER}?text=Olá,%20quero%20uma%20cotação%20gratuita`}
               target="_blank" rel="noopener"
-              style={{ background: '#fff', color: 'var(--navy)', border: '2px solid #fff', fontSize: 16, padding: '14px 28px' }}
+              style={{ background: '#fff', color: 'var(--navy)', border: '2px solid #fff', fontSize: 'var(--fs-body)', padding: '14px 28px' }}
             >
               {iconeWhats}
               Falar pelo WhatsApp
             </a>
-            <a href="#produtos" className="btn-outline-white" style={{ fontSize: 15 }}>
+            <a href="#produtos" className="btn-outline-white" style={{ fontSize: 'var(--fs-btn)' }}>
               Conhecer produtos
             </a>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 32 }}>
+          <div className="hero-bolinhas" style={{ display: 'flex', gap: 8, marginTop: 32 }}>
             {slides.map((s, i) => (
               <button
                 key={i}
@@ -216,7 +216,7 @@ export default function Hero() {
         <div className="hero-form-card" style={{
           background: '#ffffff',
           borderRadius: 20,
-          padding: '32px 28px',
+          padding: 'var(--space-card-b) var(--space-card)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.28)',
         }}>
           <FormularioCotacao />
