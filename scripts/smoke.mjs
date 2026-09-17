@@ -33,6 +33,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-overlay', 'impostor-pilares', 'impostor-grade', 'impostor-ital', 'impostor-veu',
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
+  'impostor-vizinhanca', 'impostor-vao-branco',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -146,7 +147,8 @@ async function aplicarRotas (page) {
     })
   }
   // Tres mutacoes na folha servida, uma por guarda nova desta rodada.
-  if (['impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo'].includes(MODO)) {
+  if (['impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
+    'impostor-vizinhanca'].includes(MODO)) {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       // Os alvos sao o texto MINIFICADO, que e o que o navegador recebe. Escrevi
@@ -168,6 +170,13 @@ async function aplicarRotas (page) {
         // nao move um pixel de lugar: mesma altura, mesma largura, cor outra. So o
         // braco dos blocos pode pegar isso.
         t = mutar(t, '#003a70', '#003a71', 'navy da marca')
+      } else if (MODO === 'impostor-vizinhanca') {
+        // Zera o padding de BAIXO de toda secao, que e exatamente o espaco que
+        // separa o ultimo card da faixa da citacao. E o defeito que estava no ar
+        // ate 7fc053a, reproduzido de proposito: com a faixa dentro da secao,
+        // esse padding sobrava DEPOIS dela e o vao entre o card e a faixa era 0.
+        t = mutar(t, 'section{padding:var(--space-secao) 0}',
+          'section{padding:var(--space-secao) 0 0}', 'padding de baixo das secoes')
       } else if (MODO === 'impostor-zoom') {
         // O jeito errado de encolher: amplia o pixel em vez de mudar o tamanho.
         t = mutar(t, 'body{font-size:var(--fs-body)}', 'body{font-size:var(--fs-body);zoom:.85}', 'zoom no body')
@@ -197,7 +206,8 @@ async function aplicarRotas (page) {
     })
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
-    'impostor-grade', 'impostor-veu', 'impostor-cabecalho', 'impostor-impar', 'impostor-dourado',
+    'impostor-grade', 'impostor-vao-branco', 'impostor-veu', 'impostor-cabecalho',
+    'impostor-impar', 'impostor-dourado',
     'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
@@ -232,6 +242,18 @@ async function aplicarRotas (page) {
         // producao isso media 2,04:1 e 2,02:1 em dois dos tres slides.
         t = mutar(t, 'background: linear-gradient(180deg,\n              rgba(0,20,52,0.86) 0%',
           'background: linear-gradient(95deg,\n              rgba(0,20,52,0.86) 0%', 'direcao do veu no celular')
+      } else if (MODO === 'impostor-vao-branco') {
+        // O IRMAO DO impostor-vizinhanca, E ELE EXISTE PORQUE O OUTRO NAO
+        // BASTOU. Zerar o padding das secoes derruba a assercao do VAO, mas
+        // deixa a do pixel branco VERDE: sem controle proprio, ela seria uma
+        // linha verde que nunca provou saber reprovar — que e o defeito mais
+        // repetido deste projeto.
+        // Aqui volta o defeito que estava no ar: 48px brancos entre a faixa
+        // navy e a CTA navy. A regra da faixa mora num <style> DENTRO do
+        // bundle, nao na folha, entao a mutacao e aqui.
+        t = mutar(t, '.faixa-citacao { background: var(--navy); padding: 76px 0; }',
+          '.faixa-citacao { background: var(--navy); padding: 76px 0; margin-bottom: 48px; }',
+          'vao branco embaixo da faixa')
       } else if (MODO === 'impostor-grade') {
         // 3 nao divide 4: o quarto cartao fica sozinho na segunda linha, que e
         // exatamente o defeito que a assercao existe para pegar.
@@ -1440,6 +1462,99 @@ async function medirLogoCabecalho (page) {
     }
   }
   await ctx.close()
+}
+
+// ---------------- A VIZINHANCA DA FAIXA DA CITACAO ----------------
+// Dois defeitos que sairam da MESMA causa — a faixa morava dentro de
+// <section id="sobre">: o ultimo card encostava nela (0px em todas as larguras)
+// e o padding-bottom da secao sobrava DEPOIS dela, branco, entre dois blocos
+// navy. Nenhuma assercao olhava para a vizinhanca de um bloco de largura
+// inteira, e por isso os dois foram ao ar.
+//
+// A SEGUNDA ASSERCAO LE PIXEL, nao geometria, e e escolha. Gap zero por
+// geometria nao garante que nada branco seja PINTADO ali: uma margem que
+// colapsa, uma borda, um ::after deixam o numero em 0 e a tira branca na tela.
+// Quem viu o defeito foi o olho do Gabriel num print; o instrumento que o
+// reproduz tem de olhar a mesma coisa que ele olhou.
+{
+  const PISO = 24
+  for (const W of [390, 768, 1280, 1440]) {
+    const { ctx, page } = await abrir(W, W < 500 ? 844 : 1024)
+    await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 })
+    await page.evaluate(() => document.fonts.ready)
+    await varrerPagina(page)
+
+    const m = await page.evaluate(() => {
+      const faixa = document.querySelector('.faixa-citacao')
+      if (!faixa) return null
+      const cards = [...document.querySelectorAll('.dif-card')]
+      if (!cards.length) return null
+      const topo = e => e.getBoundingClientRect().top + window.scrollY
+      const base = e => e.getBoundingClientRect().bottom + window.scrollY
+      const ultimo = cards[cards.length - 1]
+      const seguinte = faixa.nextElementSibling
+      return {
+        vao: Math.round(topo(faixa) - base(ultimo)),
+        fimDaFaixa: Math.round(base(faixa)),
+        vaoSeguinte: seguinte ? Math.round(topo(seguinte) - base(faixa)) : null,
+        bgSeguinte: seguinte ? getComputedStyle(seguinte).backgroundColor : null
+      }
+    })
+    if (!m) {
+      console.error(`INSTRUMENTO: nao achei .faixa-citacao ou .dif-card em ${W}px`)
+      process.exit(3)
+    }
+
+    V(`espaco entre o ultimo card e a faixa da citacao em ${W}px`, m.vao >= PISO,
+      `${m.vao}px (piso ${PISO}px)`)
+
+    // Tira de 12px a cavalo da borda de baixo da faixa, lida na tela. Rolar
+    // primeiro porque o clip do screenshot e em coordenada de VIEWPORT.
+    //
+    // ⚠️ E DESLIGAR A ANIMACAO ANTES DE ROLAR. O html desta pagina tem
+    // scroll-behavior: smooth, entao o scrollTo ANIMA: 250 ms depois o scrollY
+    // ainda estava em 1920 de 8286 e o clip caia 6788px fora da viewport. E a
+    // mesma armadilha que ja tinha cegado a sonda de toque, na mesma pagina.
+    const dentro = await page.evaluate(y => {
+      const antes = document.documentElement.style.scrollBehavior
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, Math.max(0, y - Math.round(window.innerHeight / 2)))
+      document.documentElement.style.scrollBehavior = antes
+      return y - window.scrollY
+    }, m.fimDaFaixa - 6)
+    await page.waitForTimeout(150)
+    // Aterrissou? Se nao, o clip sairia da imagem e o erro seria do PLAYWRIGHT,
+    // nao uma reprovacao — instrumento quebrado tem de dizer que e instrumento.
+    if (dentro < 0 || dentro + 12 > (W < 500 ? 844 : 1024)) {
+      console.error(`INSTRUMENTO: a borda da faixa caiu em y=${dentro} da viewport em ${W}px; a rolagem nao chegou la`)
+      process.exit(3)
+    }
+    const tira = await page.screenshot({ clip: { x: 0, y: dentro, width: W, height: 12 } })
+    const claros = await page.evaluate(async ([b64, larg]) => {
+      const img = new Image()
+      await new Promise((ok, err) => { img.onload = ok; img.onerror = err; img.src = 'data:image/png;base64,' + b64 })
+      const cv = document.createElement('canvas')
+      cv.width = img.width; cv.height = img.height
+      const ctx2 = cv.getContext('2d', { willReadFrequently: true })
+      ctx2.drawImage(img, 0, 0)
+      const { data, width, height } = ctx2.getImageData(0, 0, cv.width, cv.height)
+      let n = 0, total = 0
+      for (let i = 0; i < data.length; i += 4) {
+        total++
+        if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) n++
+      }
+      return { n, total, larg, width, height }
+    }, [tira.toString('base64'), W])
+    if (claros.total === 0) {
+      console.error(`INSTRUMENTO: a tira lida em ${W}px veio vazia`)
+      process.exit(3)
+    }
+    V(`sem faixa branca entre a citacao e a secao seguinte em ${W}px`, claros.n === 0,
+      `${claros.n} de ${claros.total} pixels claros na tira de ${claros.width}x${claros.height} | ` +
+      `vao=${m.vaoSeguinte}px vizinho=${m.bgSeguinte}`)
+
+    await ctx.close()
+  }
 }
 
 // ---------------- DESKTOP INTACTO, PIXEL A PIXEL ----------------

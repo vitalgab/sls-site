@@ -91,8 +91,19 @@ jobs:
           cat /tmp/http.log
           exit 1
 
+      # ⚠️ EXCEÇÃO DECLARADA, VÁLIDA SÓ NESTE COMMIT. A correção da vizinhança
+      # da faixa da citação MUDA O DESKTOP DE PROPÓSITO: o mesmo defeito estava
+      # lá (card colando na faixa, 96px brancos entre dois blocos navy). Medido
+      # contra o build de 7fc053a: 168 de 2576 blocos em 1440 e 150 de 2240 em
+      # 1280, todos numa faixa vertical contínua de y=4928 a y=5440 — nenhum
+      # bloco fora dela — e a altura da página não muda (7165 -> 7165), porque
+      # os 96px só trocaram de lado da faixa.
+      #
+      # ANTERIOR=nenhum DESLIGA a guarda e IMPRIME que desligou. É o único jeito
+      # de passar por ela, de propósito: não existe "regenerar a referência".
+      # O próximo commit devolve a linha ao normal.
       - name: Smoke
-        run: node scripts/smoke.mjs
+        run: ANTERIOR=nenhum node scripts/smoke.mjs
 
       # Os impostores custam ~11 min dos ~17 do deploy, e só dizem algo quando a
       # SUÍTE muda: eles medem se o smoke sabe reprovar, não se o site está bom.
@@ -143,6 +154,15 @@ jobs:
       # smoke. Se algum passar verde, o deploy para aqui.
       - name: Os impostores têm de morder
         if: steps.mudou.outputs.rodar == 'sim'
+        # ⚠️ ANTERIOR APONTA PARA O BUILD ATUAL, E SÓ NESTE COMMIT. Com o
+        # desktop mudando de propósito, o build atual JÁ difere do anterior em
+        # 168 blocos — então impostor-desktop e impostor-desktop-cor morderiam
+        # sem ter mutado nada, e "mordeu" não distinguiria mais nada. Apontando
+        # a referência para o próprio build, o modo sem mutação fica idêntico e
+        # a mordida volta a vir da mutação. O próximo commit remove estas duas
+        # linhas junto com a exceção do passo Smoke.
+        env:
+          ANTERIOR: http://127.0.0.1:8099/sls-site/
         run: |
           falhou=0
           for m in impostor-css impostor-rede impostor-wa impostor-em \
@@ -151,7 +171,8 @@ jobs:
                    impostor-overlay impostor-pilares impostor-grade impostor-ital \
                    impostor-veu impostor-cabecalho impostor-impar impostor-herdada \
                    impostor-dourado impostor-retrato impostor-desktop \
-                   impostor-desktop-cor impostor-zoom impostor-campo; do
+                   impostor-desktop-cor impostor-zoom impostor-campo \
+                   impostor-vizinhanca impostor-vao-branco; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
             # Só exit 1 é "mordeu". Exit 3 é INSTRUMENTO — a mutação não achou

@@ -27,3 +27,6 @@ dist-ssr
 .anterior
 .servir
 .servir-anterior
+
+# rascunhos de medicao de sessao
+scripts/.*.mjs

@@ -165,27 +165,6 @@ export default function Sobre() {
           </div>
         </div>
 
-        {/* A citacao sai da coluna de texto e vira faixa propria, largura
-            inteira, no navy da marca. Antes ela era um paragrafo cinza no fim de
-            uma grade — dizia a mesma coisa e ninguem lia. */}
-        <div className="faixa-citacao">
-          <div className="container citacao-grade">
-            <img
-              className="citacao-foto"
-              src={FOTO_GABRIEL}
-              alt="Gabriel Vital"
-              width="712" height="712"
-              loading="lazy"
-            />
-            <div className="citacao-texto-col">
-              <blockquote className="citacao-texto">
-                {'"Meu papel é estar lá antes de você precisar."'}
-              </blockquote>
-              <footer className="citacao-assinatura">— Gabriel Vital</footer>
-            </div>
-          </div>
-        </div>
-
         <style>{`
           .dif-card:hover {
             border-color: var(--navy) !important;
@@ -283,6 +262,43 @@ export default function Sobre() {
           }
         `}</style>
       </section>
+
+      {/* A FAIXA E BLOCO PROPRIO, IRMA DA SECAO, E ISSO NAO E DETALHE DE
+          ARRUMACAO. Enquanto ela morava DENTRO de <section id="sobre">, dois
+          defeitos nasciam de uma vez, medidos em 390/768/1280/1440:
+
+            - o ultimo card dos diferenciais encostava nela, 0px em TODAS as
+              larguras, porque o .container fechava exatamente ali;
+            - e o padding-bottom da secao (48/64/96px) sobrava DEPOIS da faixa,
+              pintado de branco, entre dois blocos navy. Em producao, no
+              screenshot de 390: navy ate 8665, BRANCO de 8666 a 8713, navy de
+              8714 em diante.
+
+          Fora da secao, o mesmo padding-bottom passa a separar os cards da
+          faixa — o ritmo do site, sem numero novo — e a faixa encosta na secao
+          seguinte, que e navy como ela. Duas areas navy que se tocam leem como
+          uma; o respiro entre a citacao e a CTA vem do padding de cada uma
+          (56+80 no celular), nao de um vao branco no meio.
+
+          A citacao virou faixa de largura inteira porque antes era um paragrafo
+          cinza no fim de uma grade: dizia a mesma coisa e ninguem lia. */}
+      <div className="faixa-citacao">
+        <div className="container citacao-grade">
+          <img
+            className="citacao-foto"
+            src={FOTO_GABRIEL}
+            alt="Gabriel Vital"
+            width="712" height="712"
+            loading="lazy"
+          />
+          <div className="citacao-texto-col">
+            <blockquote className="citacao-texto">
+              {'"Meu papel é estar lá antes de você precisar."'}
+            </blockquote>
+            <footer className="citacao-assinatura">— Gabriel Vital</footer>
+          </div>
+        </div>
+      </div>
     </>
   )
 }
