@@ -15,7 +15,7 @@ export default function Header() {
     { label: 'Para quem', href: '#para-quem' },
     { label: 'Produtos', href: '#produtos' },
     { label: 'Sobre', href: '#sobre' },
-    { label: 'Contato', href: '#contato' },
+    { label: 'Contato', href: '#cotacao' },
   ]
 
   return (

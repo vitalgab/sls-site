@@ -34,6 +34,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-cabecalho', 'impostor-impar', 'impostor-herdada', 'impostor-dourado',
   'impostor-retrato', 'impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
   'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
+  'impostor-ancora', 'impostor-foco',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -149,7 +150,7 @@ async function aplicarRotas (page) {
   // Tres mutacoes na folha servida, uma por guarda nova desta rodada.
   if (['impostor-desktop', 'impostor-desktop-cor', 'impostor-zoom', 'impostor-campo',
     'impostor-vizinhanca', 'impostor-piso', 'impostor-piso-cartao',
-    'impostor-piso-eyebrow', 'impostor-hierarquia'].includes(MODO)) {
+    'impostor-piso-eyebrow', 'impostor-hierarquia', 'impostor-ancora'].includes(MODO)) {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
       // Os alvos sao o texto MINIFICADO, que e o que o navegador recebe. Escrevi
@@ -171,6 +172,13 @@ async function aplicarRotas (page) {
         // nao move um pixel de lugar: mesma altura, mesma largura, cor outra. So o
         // braco dos blocos pode pegar isso.
         t = mutar(t, '#003a70', '#003a71', 'navy da marca')
+      } else if (MODO === 'impostor-ancora') {
+        // Tira o desconto do header sticky. A pagina ROLA igual — o scrollY
+        // chega no mesmo lugar — e o cartao para ATRAS da barra do topo. E o
+        // defeito que a ancora crua tem, e a razao de a assercao afirmar
+        // "abaixo do header" em vez de "rolou".
+        t = mutar(t, '#cotacao{scroll-margin-top:calc(var(--h-header) + 12px)}',
+          '#cotacao{scroll-margin-top:0}', 'desconto do header sticky')
       } else if (MODO === 'impostor-piso') {
         // Corpo abaixo de 13px no celular. O piso existe porque o pedido e
         // sempre "reduza mais", e reduzir tem fim.
@@ -224,7 +232,7 @@ async function aplicarRotas (page) {
   }
   if (['impostor-wa', 'impostor-em', 'impostor-missao', 'impostor-overlay', 'impostor-pilares',
     'impostor-grade', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-veu',
-    'impostor-cabecalho',
+    'impostor-foco', 'impostor-cabecalho',
     'impostor-impar', 'impostor-dourado',
     'estresse'].includes(MODO)) {
     await page.route(/\.js(\?|$)/, async r => {
@@ -235,6 +243,12 @@ async function aplicarRotas (page) {
         t = mutar(t, '242156562', 'XXXXXXXXXX', 'SUSEP')
       } else if (MODO === 'impostor-em') {
         t = mutar(t, 'fontStyle:`normal`,fontWeight:700', 'fontStyle:`italic`,fontWeight:400', 'destaque do hero')
+      } else if (MODO === 'impostor-foco') {
+        // Desliga o gatilho do foco sem tocar no scroll: os links continuam
+        // levando ao formulario, e o campo nao recebe foco. Sem este impostor
+        // as seis assercoes de foco nunca teriam provado saber reprovar — e
+        // foram elas que pegaram o meu defeito do hashchange.
+        t = mutar(t, 'a[href="#cotacao"]', 'a[href="#nunca-existe"]', 'gatilho do foco no formulario')
       } else if (MODO === 'impostor-dourado') {
         // Devolve ao rotulo o dourado da PECA. Ele fica bonito e ilegivel:
         // 3,43:1 sobre branco, abaixo do piso AA para texto pequeno. E o
@@ -1238,11 +1252,32 @@ async function medirLogoCabecalho (page) {
   V('nenhum "9999" no texto visivel', !/9999/.test(corpo), /9999/.test(corpo) ? JSON.stringify((corpo.match(/.{0,20}9999.{0,12}/) || [''])[0]) : '')
   V('nenhum "XXXX" no texto visivel', !/XXXX/.test(corpo))
 
-  // ---- 8. os DOIS formularios, por gesto real ----
+  // ---- 8. o formulario, por gesto real ----
+  // ⚠️ AQUI HAVIA DOIS, E O SEGUNDO SAIU COM A SECAO DE CONTATO. Saíram com ele
+  // cinco assercoes: "botao do formulario de contato presente", "chamou
+  // window.open", "URL usa wa.me", "URL preserva ?text=" e a confirmacao
+  // "Mensagem enviada!". Todas afirmavam sobre um formulario que nao existe
+  // mais; mante-las seria pedir que o site tivesse o que foi removido.
+  //
+  // E o bloco delas era `if (await form2.count() === 1) { ... }`: com o segundo
+  // formulario sumindo por DEFEITO, quatro das cinco desapareceriam caladas e
+  // so uma ficaria vermelha. Guarda dentro de `if` sobre a propria existencia
+  // do alvo e vacuidade com outra roupa. As que ficam nao tem esse `if`.
   const form1 = page.getByRole('button', { name: 'Enviar pelo WhatsApp' })   // hero
-  const form2 = page.getByRole('button', { name: 'Enviar via WhatsApp' })    // contato
   V('botao do formulario do hero presente', await form1.count() === 1, `${await form1.count()}`)
-  V('botao do formulario de contato presente', await form2.count() === 1, `${await form2.count()}`)
+
+  const semContato = await page.evaluate(() => ({
+    secao: !!document.getElementById('contato'),
+    hrefs: [...document.querySelectorAll('a[href="#contato"]')].map(a => a.getAttribute('href')),
+    forms: document.querySelectorAll('form').length,
+    cotacao: !!document.getElementById('cotacao'),
+    cotacaoNoHero: !!document.querySelector('#inicio #cotacao')
+  }))
+  V('nenhuma secao #contato no DOM', semContato.secao === false, `${semContato.secao}`)
+  V('nenhum href="#contato" na pagina', semContato.hrefs.length === 0, JSON.stringify(semContato.hrefs))
+  V('um unico formulario na pagina', semContato.forms === 1, `${semContato.forms} formulario(s)`)
+  V('#cotacao e o formulario do hero', semContato.cotacao && semContato.cotacaoNoHero,
+    `existe=${semContato.cotacao} dentro do hero=${semContato.cotacaoNoHero}`)
 
   if (await form1.count() === 1) {
     await page.fill('#inicio input[type="text"]', 'Teste Hero')
@@ -1255,20 +1290,6 @@ async function medirLogoCabecalho (page) {
       V(`URL do formulario do hero usa wa.me/${WA}`, ab[0].includes(`wa.me/${WA}`), ab[0].slice(0, 70) + '...')
       V('URL do formulario do hero preserva ?text= com o nome digitado', ab[0].includes('?text=') && /Teste%20Hero/.test(ab[0]))
     }
-  }
-  if (await form2.count() === 1) {
-    await page.evaluate(() => { window.__abertos.length = 0 })
-    await page.fill('#contato input[type="text"]', 'Teste Contato')
-    await page.fill('#contato input[type="tel"]', '(71) 97777-6666')
-    await form2.click({ timeout: 8000 })
-    await page.waitForTimeout(400)
-    const ab = await page.evaluate(() => window.__abertos.slice())
-    V('formulario de contato chamou window.open', ab.length === 1, `${ab.length} chamada(s)`)
-    if (ab.length) {
-      V(`URL do formulario de contato usa wa.me/${WA}`, ab[0].includes(`wa.me/${WA}`), ab[0].slice(0, 70) + '...')
-      V('URL do formulario de contato preserva ?text=', ab[0].includes('?text=') && /Teste%20Contato/.test(ab[0]))
-    }
-    V('confirmacao "Mensagem enviada!" apareceu', (await page.getByText('Mensagem enviada!').count()) > 0)
   }
 
   if (SHOTS) {
@@ -1418,9 +1439,11 @@ async function medirLogoCabecalho (page) {
     const rolagemAntes = document.documentElement.style.scrollBehavior
     document.documentElement.style.scrollBehavior = 'auto'
     const alvos = []
+    let candidatos = 0
     for (const e of document.querySelectorAll('a, button, input, select, textarea')) {
       const r = e.getBoundingClientRect()
       if (r.width === 0 || r.height === 0) continue
+      candidatos++
       e.scrollIntoView({ block: 'center' })
       const m = cai(e)
       if (m) alvos.push(m)
@@ -1438,7 +1461,7 @@ async function medirLogoCabecalho (page) {
       textoCard: [...document.querySelectorAll('.paraquem-card p, .dif-card p, #produtos p, #produtos li')]
         .map(e => px(getComputedStyle(e).fontSize)),
       eyebrows: [...document.querySelectorAll('.section-eyebrow')].map(e => px(getComputedStyle(e).fontSize)),
-      campos, alvos, pequenos: alvos.filter(a => !a.ok),
+      campos, alvos, candidatos, pequenos: alvos.filter(a => !a.ok),
     }
   })
   // OS PISOS, NAO OS VALORES DA RODADA. A versao anterior desta linha exigia
@@ -1463,15 +1486,24 @@ async function medirLogoCabecalho (page) {
   // pagina sozinho ao tocar no campo, e nao volta.
   V('todo campo de formulario >= 16px no celular', esc.campos.length > 0 && esc.campos.every(c => c.fs >= 16),
     esc.campos.map(c => `${c.o}=${c.fs}`).join(' '))
-  // O piso de 30 nao e decoracao: "0 alvos pequenos" sobre 3 alvos conferidos
-  // e o mesmo texto verde de "0 sobre 40", e foi o que apareceu aqui quando a
-  // sonda estava quebrada.
-  if (esc.alvos.length < 30) {
-    console.error(`INSTRUMENTO: so ${esc.alvos.length} alvos foram sondados; a pagina tem dezenas`)
+  // ⚠️ O PISO E RELATIVO, E ISSO E O CONSERTO DE UM PISO ABSOLUTO QUE ENVELHECEU.
+  // Ele nasceu como "pelo menos 30 alvos", porque "0 alvos pequenos" sobre 3
+  // conferidos e o mesmo texto verde de "0 sobre 40" — foi o que apareceu aqui
+  // quando a sonda estava quebrada. Mas o 30 era a contagem daquele dia: ao
+  // remover a secao de contato a pagina passou a ter 29 alvos e o piso reprovou
+  // o conserto, nao um defeito. Numero do dia virado em regra, caso 103 de novo.
+  // Agora o piso e a propria pagina: a sonda tem de alcancar quase tudo que
+  // existe. Some um alvo do site, o piso acompanha; quebre a sonda, ela acusa.
+  if (esc.candidatos < 12) {
+    console.error(`INSTRUMENTO: so ${esc.candidatos} alvos existem no DOM; a pagina tem dezenas`)
+    process.exit(3)
+  }
+  if (esc.alvos.length < esc.candidatos * 0.9) {
+    console.error(`INSTRUMENTO: a sonda alcancou ${esc.alvos.length} de ${esc.candidatos} alvos do DOM`)
     process.exit(3)
   }
   V('todo alvo responde a um toque de 44x44', esc.pequenos.length === 0,
-    `${esc.alvos.length} alvos sondados` + (esc.pequenos.length ? ` | PEQUENOS: ${JSON.stringify(esc.pequenos.slice(0, 5))}` : ''))
+    `${esc.alvos.length} de ${esc.candidatos} alvos sondados` + (esc.pequenos.length ? ` | PEQUENOS: ${JSON.stringify(esc.pequenos.slice(0, 5))}` : ''))
   // A reducao e de TAMANHO, nao de escala: zoom e transform ampliam o pixel, o
   // texto fica borrado e quem quiser aproximar com os dedos nao consegue.
   V('sem zoom nem transform no corpo', (esc.zoom === '1' || esc.zoom === 'normal') && esc.transform === 'none',
@@ -1524,6 +1556,66 @@ async function medirLogoCabecalho (page) {
     }
   }
   await ctx.close()
+}
+
+// ---------------- TODO CAMINHO PARA O FORMULARIO CHEGA NELE ----------------
+// A secao de contato saiu e tres caminhos que levavam a ela passaram a apontar
+// para o formulario do topo. "O href mudou" nao e a propriedade que interessa:
+// o que interessa e que quem CLICA chega num formulario utilizavel.
+//
+// Por isso a assercao CLICA, e afirma tres coisas de uma vez — o cartao fica
+// abaixo do header sticky (nao atras dele), esta dentro da janela, e o primeiro
+// campo esta focado. Conferir so o scrollY diria "rolou" com o cartao escondido
+// atras do header, que e exatamente o defeito que o scroll-margin-top evita.
+{
+  for (const W of [1440, 390]) {
+    const { ctx, page } = await abrir(W, W < 500 ? 844 : 900)
+    await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 })
+    await page.evaluate(() => document.fonts.ready)
+    await varrerPagina(page)
+
+    // no celular o menu do topo fica atras do botao hamburguer; a lista de
+    // caminhos e a que EXISTE naquela largura, e ela nunca pode estar vazia
+    const caminhos = W >= 900
+      ? [['menu do topo', 'header a[href="#cotacao"]'], ['botao da CTA', 'a.btn-outline-white[href="#cotacao"]'], ['rodape', 'footer a[href="#cotacao"]']]
+      : [['botao da CTA', 'a.btn-outline-white[href="#cotacao"]'], ['rodape', 'footer a[href="#cotacao"]']]
+
+    for (const [nome, sel] of caminhos) {
+      const alvo = page.locator(sel).first()
+      if (await alvo.count() === 0) {
+        console.error(`INSTRUMENTO: nenhum link "${nome}" (${sel}) em ${W}px`)
+        process.exit(3)
+      }
+      // sai de perto do formulario para o clique ter o que provar
+      await page.evaluate(() => {
+        document.documentElement.style.scrollBehavior = 'auto'
+        window.scrollTo(0, document.documentElement.scrollHeight)
+      })
+      await page.waitForTimeout(200)
+      await alvo.click({ timeout: 8000 })
+      await page.waitForTimeout(1200)
+      const r = await page.evaluate(() => {
+        const card = document.getElementById('cotacao')
+        if (!card) return null
+        const c = card.getBoundingClientRect()
+        const h = document.querySelector('header').getBoundingClientRect()
+        return {
+          topo: Math.round(c.top), fundoDoHeader: Math.round(h.bottom),
+          abaixoDoHeader: c.top >= h.bottom - 1,
+          visivel: c.top < window.innerHeight && c.bottom > 0,
+          focoDentro: card.contains(document.activeElement),
+          foco: document.activeElement ? document.activeElement.tagName.toLowerCase() : 'nenhum'
+        }
+      })
+      if (!r) { console.error(`INSTRUMENTO: #cotacao sumiu em ${W}px`); process.exit(3) }
+      V(`"${nome}" leva ao formulario, abaixo do header, em ${W}px`,
+        r.abaixoDoHeader && r.visivel,
+        `topo do cartao ${r.topo}px, header termina em ${r.fundoDoHeader}px`)
+      V(`"${nome}" foca o primeiro campo em ${W}px`, r.focoDentro,
+        `foco em <${r.foco}>, dentro do formulario=${r.focoDentro}`)
+    }
+    await ctx.close()
+  }
 }
 
 // ---------------- A VIZINHANCA DA FAIXA DA CITACAO ----------------

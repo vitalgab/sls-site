@@ -120,6 +120,41 @@ export default function Hero() {
     return () => clearInterval(id)
   }, [])
 
+  // Com a secao do fim removida, "Contato" e "Prefiro preencher formulario"
+  // passam a apontar para o formulario do topo. Duas coisas que a ancora
+  // sozinha nao faz:
+  //
+  //  - o header e STICKY. A ancora crua encosta o topo do cartao no topo da
+  //    janela, ou seja, ATRAS do header. Quem resolve e o scroll-margin-top do
+  //    #cotacao, em CSS, e nao uma conta de rolagem em JS — a conta erraria
+  //    toda vez que a altura do header mudasse, e ela muda por token agora.
+  //  - o foco. Rolar leva o olho; quem chega pelo menu quer DIGITAR. O foco vai
+  //    com preventScroll porque focar tambem rola, e rolagem em cima de rolagem
+  //    da um solavanco.
+  //  ⚠️ O GATILHO E O CLIQUE, NAO O hashchange, e a diferenca me mordeu. A
+  //  primeira versao ouvia hashchange: funcionava no PRIMEIRO caminho e em mais
+  //  nenhum. Depois dele a URL ja termina em #cotacao, clicar de novo nao muda
+  //  o hash, o evento nao dispara e o campo nao recebe foco. A assercao que
+  //  CLICA nos tres caminhos pegou isso; uma que conferisse href nunca pegaria,
+  //  porque os tres hrefs estavam certos o tempo todo.
+  useEffect(() => {
+    const focar = () => {
+      const campo = document.querySelector('#cotacao input, #cotacao select, #cotacao textarea')
+      if (campo) setTimeout(() => campo.focus({ preventScroll: true }), 420)
+    }
+    const aoClicar = e => {
+      const a = e.target.closest && e.target.closest('a[href="#cotacao"]')
+      if (a) focar()
+    }
+    if (window.location.hash === '#cotacao') focar()
+    document.addEventListener('click', aoClicar)
+    window.addEventListener('hashchange', focar)
+    return () => {
+      document.removeEventListener('click', aoClicar)
+      window.removeEventListener('hashchange', focar)
+    }
+  }, [])
+
   return (
     <section id="inicio" style={{
       minHeight: '100vh',
@@ -213,7 +248,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hero-form-card" style={{
+        <div className="hero-form-card" id="cotacao" style={{
           background: '#ffffff',
           borderRadius: 20,
           padding: 'var(--space-card-b) var(--space-card)',

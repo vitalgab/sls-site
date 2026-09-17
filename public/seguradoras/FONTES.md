@@ -123,13 +123,28 @@ Os arquivos vieram do Gabriel, que os abriu no navegador dele.
 | arquivo | o que é | origem declarada | conferência feita aqui |
 |---|---|---|---|
 | `akad.svg` | logo Akad Seguros | cabeçalho de `akadseguros.com.br`, SVG embutido | `viewBox="0 0 181 76"`, um único `fill="#E8266B"` (a cor renderizada lá), **zero** `currentColor`, zero `<script>`, zero `href` externo, zero `<image>`, zero `<foreignObject>`, zero handler `on*` |
-| `omint.png` | logo Omint | `omint.com.br` | 6 cores nos pixels opacos, e as **duas** primeiras cobrem 99,99% — `rgb(0,36,117)` e `rgb(127,145,186)`. Borda com alfa parcial = 1,38% da tinta |
+| `omint.png` | logo Omint | ⚠️ **busca de imagens**, não o site oficial — ver abaixo | 6 cores nos pixels opacos, e as **duas** primeiras cobrem 99,99% — `rgb(0,36,117)` e `rgb(127,145,186)`. Borda com alfa parcial = 1,38% da tinta |
 
-Sobre a Omint: o arquivo que chegou tem 4096x4096 com a tinta em 2874x786. A URL
-oficial do briefing
-(`/wp-content/themes/OmintPortal360/assets/images/login/logo.png`) continua em
-403, então **não deu para comparar com o original byte a byte**. O que dá para
-afirmar é o que a medição mostra: duas cores chapadas, borda de 1,4% e arestas
-limpas — assinatura de exportação de vetor, não de redesenho nem de upscale por
-IA, que deixariam dezenas de cores na transição. O arquivo aqui foi recortado na
-tinta e reduzido para 900x246, 35 kB; nada foi redesenhado.
+### ⚠️ A ORIGEM DA `omint.png` — correção
+
+A linha da tabela dizia `omint.com.br`, e **estava errada**. O arquivo que o
+Gabriel enviou (`omint-logo-0.png`, 4096x4096) veio de **busca de imagens**, não
+do site oficial. A URL do briefing
+(`/wp-content/themes/OmintPortal360/assets/images/login/logo.png`) segue em
+**403**, e por isso nunca houve comparação com o original.
+
+Escrever "origem: omint.com.br" numa coluna chamada *origem declarada* dizia que
+o arquivo veio de lá. Ele não veio. A procedência real é mais fraca, e é assim
+que tem de estar escrito: a fonte é desconhecida, e o que sustenta o arquivo é a
+MEDIÇÃO, não a proveniência.
+
+**A medição continua valendo, e é ela que fica.** Nos pixels opacos há 6 cores, e
+as duas primeiras cobrem 99,99%: `rgb(0,36,117)` e `rgb(127,145,186)`. A borda
+com alfa parcial é 1,38% da tinta. Duas cores chapadas, borda fina e arestas
+limpas são assinatura de **exportação de vetor** — redesenho à mão ou upscale por
+IA deixariam dezenas de cores na transição, e não deixaram. O arquivo tem a tinta
+em 2874x786; aqui ele foi recortado na tinta e reduzido para 900x246, 35 kB.
+Nada foi redesenhado.
+
+O que a medição NÃO diz: de qual exportação da marca este arquivo saiu, nem se é
+a versão atual. Para isso só a URL oficial serve, e ela continua em 403.

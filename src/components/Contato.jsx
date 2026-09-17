@@ -1,17 +1,10 @@
-import { useState } from 'react'
 import { WA_NUMBER } from '../contato'
 
+// A seção do formulário do fim saiu: um site com dois formulários iguais pede a
+// mesma coisa duas vezes, e quem chega ao fim já passou pelo do topo. Saíram
+// junto o useState, o handleSubmit e o estado `enviado` — eram só dela. O que
+// resta aqui é a faixa CTA, e ela leva ao formulário do hero, #cotacao.
 export default function Contato() {
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', interesse: '', mensagem: '' })
-  const [enviado, setEnviado] = useState(false)
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    const texto = `Olá, me chamo *${form.nome}*.\n\nTenho interesse em: ${form.interesse || 'Não informado'}\nE-mail: ${form.email}\nTelefone: ${form.telefone}\n\n${form.mensagem}`
-    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(texto)}`, '_blank')
-    setEnviado(true)
-  }
-
   return (
     <>
       {/* Faixa CTA */}
@@ -51,135 +44,13 @@ export default function Contato() {
               </svg>
               Falar pelo WhatsApp agora
             </a>
-            <a className="btn-outline-white" href="#contato">
+            <a className="btn-outline-white" href="#cotacao">
               Prefiro preencher formulário
             </a>
           </div>
         </div>
       </section>
 
-      {/* Formulário */}
-      <section id="contato" style={{ background: 'var(--gray-50)' }}>
-        <div className="container" style={{ maxWidth: 460, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span className="section-eyebrow">Contato</span>
-            <h2 className="section-title" style={{ margin: '0 auto 8px', fontSize: 'var(--fs-h2-form)' }}>
-              Prefere preencher um formulário?
-            </h2>
-            <p style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-xs)' }}>
-              Preencha abaixo e entraremos em contato via WhatsApp.
-            </p>
-          </div>
-
-          {enviado ? (
-            <div style={{
-              textAlign: 'center', padding: 56, background: 'var(--white)',
-              borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-200)',
-            }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: '50%',
-                background: 'var(--steel-light)', color: 'var(--navy)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 20px',
-              }}>
-                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h3-ok)', color: 'var(--navy)', marginBottom: 10 }}>Mensagem enviada!</h3>
-              <p style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-btn)' }}>Você foi redirecionado para o WhatsApp. Responderemos em breve.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{
-              display: 'flex', flexDirection: 'column', gap: 12,
-              background: 'var(--white)', padding: 'var(--space-card) var(--space-card-x)', borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--gray-200)', boxShadow: 'var(--shadow)',
-            }}>
-              {[
-                { name: 'nome', label: 'Nome completo', type: 'text', placeholder: 'Dr. João Silva', required: true },
-                { name: 'email', label: 'E-mail', type: 'email', placeholder: 'joao@exemplo.com', required: false },
-                { name: 'telefone', label: 'Telefone / WhatsApp', type: 'tel', placeholder: '(71) 91234-5678', required: true },
-              ].map(f => (
-                <div key={f.name}>
-                  <label style={{
-                    display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
-                    color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
-                  }}>{f.label} {f.required && <span style={{ color: 'var(--navy)' }}>*</span>}</label>
-                  <input
-                    type={f.type}
-                    placeholder={f.placeholder}
-                    required={f.required}
-                    value={form[f.name]}
-                    onChange={e => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}
-                    style={{
-                      width: '100%', padding: '10px 14px',
-                      border: '1.5px solid var(--gray-200)',
-                      borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
-                      outline: 'none', transition: 'border-color 0.2s',
-                      fontFamily: 'var(--font-body)',
-                      color: 'var(--gray-800)',
-                    }}
-                    onFocus={e => e.target.style.borderColor = 'var(--navy)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--gray-200)'}
-                  />
-                </div>
-              ))}
-
-              <div>
-                <label style={{
-                  display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
-                  color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
-                }}>Tenho interesse em</label>
-                <select
-                  value={form.interesse}
-                  onChange={e => setForm(prev => ({ ...prev, interesse: e.target.value }))}
-                  style={{
-                    width: '100%', padding: '10px 14px',
-                    border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
-                    outline: 'none', background: 'white',
-                    fontFamily: 'var(--font-body)',
-                    color: form.interesse ? 'var(--gray-800)' : '#94a3b8',
-                  }}
-                >
-                  <option value="">Selecione um produto...</option>
-                  <option value="Plano de Saúde">Plano de Saúde</option>
-                  <option value="Seguro de Vida">Seguro de Vida</option>
-                  <option value="Previdência Privada">Previdência Privada</option>
-                  <option value="RC Profissional">Responsabilidade Civil Profissional</option>
-                  <option value="Mais de um produto">Mais de um produto</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{
-                  display: 'block', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
-                  color: 'var(--navy)', marginBottom: 5, letterSpacing: 0.3,
-                }}>Mensagem (opcional)</label>
-                <textarea
-                  placeholder="Conte um pouco sobre o que você precisa..."
-                  rows={3}
-                  value={form.mensagem}
-                  onChange={e => setForm(prev => ({ ...prev, mensagem: e.target.value }))}
-                  style={{
-                    width: '100%', padding: '10px 14px',
-                    border: '1.5px solid var(--gray-200)',
-                    borderRadius: 'var(--radius)', fontSize: 'var(--fs-xs)',
-                    outline: 'none', resize: 'vertical',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                  onFocus={e => e.target.style.borderColor = 'var(--navy)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--gray-200)'}
-                />
-              </div>
-
-              <button type="submit" className="btn-primary" style={{ justifyContent: 'center', fontSize: 'var(--fs-sm)', padding: '12px' }}>
-                Enviar via WhatsApp
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
     </>
   )
 }

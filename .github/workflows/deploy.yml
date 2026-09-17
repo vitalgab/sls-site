@@ -91,21 +91,25 @@ jobs:
           cat /tmp/http.log
           exit 1
 
-      # ⚠️ EXCEÇÃO DECLARADA, VÁLIDA SÓ NESTE COMMIT. A divisória é uma linha
-      # nova entre a citação e a CTA, em todas as larguras, e a simetria de
-      # 60px de cada lado encurta o desktop. Medido contra o build de e7b2a0d,
-      # em 1440 e em 1280, lendo a captura de página inteira linha a linha:
+      # ⚠️ EXCEÇÃO DECLARADA, VÁLIDA SÓ NESTE COMMIT. A seção de contato saiu,
+      # e uma seção inteira a menos muda o desktop de propósito. Medido contra
+      # o build de a1c8ec1, lendo a captura de página inteira linha a linha, em
+      # 1440 e em 1280 — os dois dão exatamente o mesmo:
       #
-      #   altura 7165 -> 7122 (-43px)
-      #   do topo até y=5367 ............ IDÊNTICO, byte a byte
-      #   de y=5368 até o fim ........... idêntico ao anterior DESLOCADO 43px,
-      #                                   1754 linhas, translação pura
-      #   região realmente alterada ..... 1px — a linha dourada
+      #   altura 7122 -> 6252 (-870px, a seção removida)
+      #   do topo até y=5761 ............ IDÊNTICO, byte a byte
+      #   y=5760 / y=5761 ............... CTA em rgb(0,58,112) encosta no rodapé
+      #                                   em rgb(0,28,61). Sem tira solta, sem
+      #                                   faixa cinza sobrando no meio
+      #   do rodapé em diante ........... idêntico ao anterior deslocado 870px,
+      #                                   EXCETO 2 pixels em y=6093 (x 168-170),
+      #                                   no traço do ícone de telefone, com
+      #                                   delta de 5/255 — jitter de rasterização
+      #                                   de vetor, não mudança de conteúdo
       #
-      # É essa a prova de que nada vazou para fora da região citação→CTA: o que
-      # muda abaixo dela muda de LUGAR, não de conteúdo. Contar blocos não
-      # bastaria aqui — a grade de 64px desalinha com um deslocamento de 43.
-      # O próximo commit devolve esta linha ao normal.
+      # Digo "exceto 2 pixels" e não "idêntico" de propósito: 2 de 9.002.880 é
+      # desprezível, mas arredondar para zero é como se aprende a arredondar o
+      # resto. O próximo commit devolve esta linha ao normal.
       - name: Smoke
         run: ANTERIOR=nenhum node scripts/smoke.mjs
 
@@ -176,7 +180,8 @@ jobs:
                    impostor-desktop-cor impostor-zoom impostor-campo \
                    impostor-vizinhanca impostor-vao-branco impostor-sem-divisoria \
                    impostor-piso \
-                   impostor-piso-cartao impostor-piso-eyebrow impostor-hierarquia; do
+                   impostor-piso-cartao impostor-piso-eyebrow impostor-hierarquia \
+                   impostor-ancora impostor-foco; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
             # Só exit 1 é "mordeu". Exit 3 é INSTRUMENTO — a mutação não achou

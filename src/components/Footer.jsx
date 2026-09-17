@@ -80,7 +80,7 @@ export default function Footer() {
               {[
                 { label: 'Para quem é', href: '#para-quem' },
                 { label: 'Sobre nós', href: '#sobre' },
-                { label: 'Contato', href: '#contato' },
+                { label: 'Contato', href: '#cotacao' },
               ].map(item => (
                 <li key={item.label}>
                   <a href={item.href} style={{ fontSize: 'var(--fs-sm)', transition: 'color 0.2s' }}
