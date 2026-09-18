@@ -37,6 +37,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-ancora', 'impostor-foco', 'impostor-titulo', 'impostor-cidade',
   'impostor-cidade-ld', 'impostor-ldurl',
   'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical',
+  'impostor-robots', 'impostor-sitemap', 'impostor-lastmod',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -48,6 +49,16 @@ const V = (n, c, d = '') => {
   if (c) { ok++; console.log(`✓ ${n}${d ? ' — ' + d : ''}`) }
   else { bad++; console.log(`✗ ${n}${d ? ' — ' + d : ''}`) }
 }
+// Irma do `mutar` para quando o alvo tem parte VARIAVEL — uma data, um hash.
+// Mesmo contrato: zero ocorrencias derruba com exit 3, porque "nao achou alvo"
+// nunca pode virar "nao mordeu".
+const mutarRe = (txt, re, para, rotulo) => {
+  const n = (txt.match(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g')) || []).length
+  if (n === 0) { console.error(`INSTRUMENTO: mutacao "${rotulo}" nao achou alvo`); process.exit(3) }
+  console.error(`  [${MODO}] mutou ${n}x: ${rotulo}`)
+  return txt.replace(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g'), para)
+}
+
 const mutar = (txt, de, para, rotulo) => {
   const n = txt.split(de).length - 1
   if (n === 0) { console.error(`INSTRUMENTO: mutacao "${rotulo}" nao achou alvo`); process.exit(3) }
@@ -264,6 +275,30 @@ async function aplicarRotas (page) {
   // volta ao estado em que --gray-500 era usado sem nunca ter sido definido.
   // Apaga a declaracao da folha SERVIDA — empilhar regra por cima nao removeria
   // nada, e o impostor passaria verde sem ter mordido.
+  // robots.txt e sitemap.xml: tres impostores, um por familia de assercao.
+  if (['impostor-robots', 'impostor-sitemap', 'impostor-lastmod'].includes(MODO)) {
+    await page.route(/\/(robots\.txt|sitemap\.xml)(\?|$)/, async r => {
+      let t = await (await r.fetch()).text()
+      const eRobots = r.request().url().includes('robots.txt')
+      if (MODO === 'impostor-robots' && eRobots) {
+        // o defeito que tira o site do indice inteiro, numa linha
+        t = mutar(t, 'Allow: /', 'Disallow: /', 'robots liberando tudo')
+      } else if (MODO === 'impostor-sitemap' && !eRobots) {
+        // XML truncado no meio de uma tag. O <loc> CONTINUA no texto: uma
+        // assercao por includes() daria verde aqui, e o Google descartaria o
+        // sitemap inteiro sem avisar.
+        t = t.slice(0, t.indexOf('</loc>') + 3)
+      } else if (MODO === 'impostor-lastmod' && !eRobots) {
+        // ⚠️ DATA NO FUTURO, MAS XML VALIDO. A primeira versao injetava lixo e
+        // quebrava o documento: mordia a assercao de XML valido JUNTO com a de
+        // lastmod, e nao dizia qual das duas soube reprovar. Controle que morde
+        // duas coisas nao e controle de nenhuma das duas.
+        t = mutarRe(t, /<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/,
+          '<lastmod>2099-01-01</lastmod>', 'lastmod no futuro')
+      }
+      await r.fulfill({ body: t, contentType: eRobots ? 'text/plain' : 'application/xml' })
+    })
+  }
   if (MODO === 'impostor-gray') {
     await page.route(/\.css(\?|$)/, async r => {
       let t = await (await r.fetch()).text()
@@ -1726,6 +1761,72 @@ async function medirLogoCabecalho (page) {
       String(img.w) === meta.og['image:width'] && String(img.h) === meta.og['image:height'],
       `arquivo ${img.w}x${img.h} vs declarado ${meta.og['image:width']}x${meta.og['image:height']}`)
   }
+
+  await ctx.close()
+}
+
+// ---------------- robots.txt E sitemap.xml ----------------
+// Os dois sao lidos por ROBO, nunca por gente: ninguem percebe se sumirem, e o
+// custo aparece semanas depois, em busca. Por isso eles tem guarda propria.
+//
+// ⚠️ O XML E PARSEADO, nao conferido por texto. Um includes('<loc>') dá verde
+// num arquivo truncado no meio, com a tag aberta e o documento quebrado — e um
+// sitemap malformado o Google descarta INTEIRO, sem avisar. Parsear e a
+// diferenca entre "o texto aparece" e "o documento existe".
+{
+  const { ctx, page } = await abrir(1440, 900)
+  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 })
+
+  const robots = await page.evaluate(async base => {
+    try {
+      const r = await fetch(new URL('robots.txt', base).href, { cache: 'no-store' })
+      return { status: r.status, texto: await r.text() }
+    } catch (e) { return { status: 0, texto: '', erro: String(e) } }
+  }, BASE)
+  V('robots.txt responde 200', robots.status === 200, `http=${robots.status}`)
+  V('robots.txt libera tudo e aponta o sitemap',
+    /User-agent:\s*\*/i.test(robots.texto) &&
+    /(^|\n)\s*Allow:\s*\/\s*($|\n)/i.test(robots.texto) &&
+    !/(^|\n)\s*Disallow:\s*\/\s*($|\n)/i.test(robots.texto) &&
+    robots.texto.includes('https://seulegadoseguro.com.br/sitemap.xml'),
+    JSON.stringify(robots.texto.trim().slice(0, 80)))
+
+  const sm = await page.evaluate(async base => {
+    try {
+      const r = await fetch(new URL('sitemap.xml', base).href, { cache: 'no-store' })
+      const texto = await r.text()
+      // parse de verdade: DOMParser marca <parsererror> em XML invalido
+      const doc = new DOMParser().parseFromString(texto, 'application/xml')
+      const erro = doc.querySelector('parsererror')
+      const urls = [...doc.querySelectorAll('urlset > url')].map(u => ({
+        loc: u.querySelector('loc')?.textContent || null,
+        lastmod: u.querySelector('lastmod')?.textContent || null
+      }))
+      return {
+        status: r.status,
+        tipo: r.headers.get('content-type') || '',
+        valido: !erro,
+        erroTexto: erro ? erro.textContent.slice(0, 90) : null,
+        ns: doc.documentElement?.namespaceURI || null,
+        raiz: doc.documentElement?.nodeName || null,
+        urls
+      }
+    } catch (e) { return { status: 0, valido: false, erroTexto: String(e), urls: [] } }
+  }, BASE)
+
+  V('sitemap.xml responde 200', sm.status === 200, `http=${sm.status} tipo=${sm.tipo}`)
+  V('sitemap.xml e XML valido', sm.valido === true, sm.erroTexto || 'sem parsererror')
+  V('sitemap.xml e um urlset do schema de sitemaps',
+    sm.raiz === 'urlset' && sm.ns === 'http://www.sitemaps.org/schemas/sitemap/0.9',
+    `<${sm.raiz}> xmlns=${sm.ns}`)
+  V('sitemap.xml lista a home no dominio novo',
+    sm.urls.length === 1 && sm.urls[0].loc === 'https://seulegadoseguro.com.br/',
+    `${sm.urls.length} url(s): ${sm.urls.map(u => u.loc).join(', ')}`)
+  // lastmod com data que existe de verdade, nao so "parece data"
+  const lm = sm.urls[0] && sm.urls[0].lastmod
+  const dataOk = !!lm && /^\d{4}-\d{2}-\d{2}$/.test(lm) && !Number.isNaN(Date.parse(lm)) &&
+    Date.parse(lm) <= Date.now() + 864e5
+  V('lastmod e uma data ISO real e nao futura', dataOk, `lastmod=${lm}`)
 
   await ctx.close()
 }

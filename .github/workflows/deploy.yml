@@ -182,7 +182,8 @@ jobs:
                    impostor-piso-cartao impostor-piso-eyebrow impostor-hierarquia \
                    impostor-ancora impostor-foco impostor-titulo impostor-cidade \
                    impostor-cidade-ld impostor-ldurl impostor-ogtitulo \
-                   impostor-ogimagem impostor-canonical; do
+                   impostor-ogimagem impostor-canonical impostor-robots \
+                   impostor-sitemap impostor-lastmod; do
             cod=0
             MODO="$m" node scripts/smoke.mjs > "/tmp/$m.log" 2>&1 || cod=$?
             # Só exit 1 é "mordeu". Exit 3 é INSTRUMENTO — a mutação não achou
