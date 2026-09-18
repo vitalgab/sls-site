@@ -36,6 +36,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-vizinhanca', 'impostor-vao-branco', 'impostor-sem-divisoria', 'impostor-piso', 'impostor-piso-cartao', 'impostor-piso-eyebrow', 'impostor-hierarquia',
   'impostor-ancora', 'impostor-foco', 'impostor-titulo', 'impostor-cidade',
   'impostor-cidade-ld', 'impostor-ldurl',
+  'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -143,7 +144,8 @@ async function aplicarRotas (page) {
   // apontam para LADOS OPOSTOS: o titulo tem de PERDER a cidade, e a description
   // e o JSON-LD tem de MANTE-LA. Um impostor so, mexendo em tudo, morderia e nao
   // diria qual das cinco linhas soube reprovar. Um por campo diz.
-  if (['impostor-titulo', 'impostor-cidade', 'impostor-cidade-ld', 'impostor-ldurl'].includes(MODO)) {
+  if (['impostor-titulo', 'impostor-cidade', 'impostor-cidade-ld', 'impostor-ldurl',
+    'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical'].includes(MODO)) {
     await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-titulo') {
@@ -156,6 +158,20 @@ async function aplicarRotas (page) {
           'Corretora de seguros especializada', 'cidade na description')
       } else if (MODO === 'impostor-cidade-ld') {
         t = mutar(t, '"addressLocality": "Salvador"', '"addressLocality": "Brasil"', 'cidade no JSON-LD')
+      } else if (MODO === 'impostor-ogtitulo') {
+        // og:title fora de sincronia com o <title>: a previa mostra uma coisa e
+        // a aba do navegador outra. Ninguem ve os dois lado a lado.
+        t = mutar(t, '<meta property="og:title" content="Seu Legado Seguro | Corretora de Seguros" />',
+          '<meta property="og:title" content="Seu Legado Seguro | Corretora de Seguros em Salvador" />',
+          'og:title')
+      } else if (MODO === 'impostor-ogimagem') {
+        // ⚠️ O DEFEITO CLASSICO: og:image RELATIVA. Funciona no navegador, que
+        // resolve contra a pagina, e falha no robo do WhatsApp, que pede a
+        // imagem sozinha. A previa sai sem cartao e nada no site parece errado.
+        t = mutar(t, 'content="https://seulegadoseguro.com.br/assets/og-image.png"',
+          'content="/assets/og-image.png"', 'og:image e twitter:image absolutas')
+      } else if (MODO === 'impostor-canonical') {
+        t = mutar(t, '<link rel="canonical" href="https://seulegadoseguro.com.br/" />', '', 'link canonical')
       } else {
         t = mutar(t, '"url": "https://seulegadoseguro.com.br"',
           '"url": "https://vitalgab.github.io/sls-site/"', 'url do JSON-LD')
@@ -1617,7 +1633,13 @@ async function medirLogoCabecalho (page) {
       descricao: m('meta[name="description"]'),
       ldNome: ld?.name || null,
       ldCidade: ld?.address?.addressLocality || null,
-      ldUrl: ld?.url || null
+      ldUrl: ld?.url || null,
+      canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') || null,
+      og: Object.fromEntries(['type', 'site_name', 'locale', 'url', 'title', 'description',
+        'image', 'image:width', 'image:height', 'image:alt']
+        .map(k => [k, m(`meta[property="og:${k}"]`)])),
+      tw: Object.fromEntries(['card', 'title', 'description', 'image']
+        .map(k => [k, m(`meta[name="twitter:${k}"]`)]))
     }
   })
   const TITULO = 'Seu Legado Seguro | Corretora de Seguros'
@@ -1628,6 +1650,83 @@ async function medirLogoCabecalho (page) {
   V('JSON-LD ainda cita a cidade', meta.ldCidade === 'Salvador', `addressLocality=${meta.ldCidade}`)
   V('JSON-LD com nome e url coerentes', meta.ldNome === 'Seu Legado Seguro' && meta.ldUrl === 'https://seulegadoseguro.com.br',
     `name=${meta.ldNome} url=${meta.ldUrl}`)
+
+  // ---- o cartao do link ----
+  // As 12 tags que o briefing pede, conferidas UMA A UMA pelo nome: contar
+  // quantas existem diria "12" com uma repetida e outra faltando.
+  const faltando = []
+  for (const [k, v] of Object.entries(meta.og)) if (!v) faltando.push('og:' + k)
+  for (const [k, v] of Object.entries(meta.tw)) if (!v) faltando.push('twitter:' + k)
+  if (!meta.canonical) faltando.push('canonical')
+  V('as tags de compartilhamento existem', faltando.length === 0,
+    faltando.length ? `FALTAM ${faltando.join(', ')}` : `${Object.keys(meta.og).length + Object.keys(meta.tw).length + 1} tags`)
+
+  V('og:title e twitter:title batem com o <title>',
+    meta.og.title === TITULO && meta.tw.title === TITULO,
+    `og=${JSON.stringify(meta.og.title)} tw=${JSON.stringify(meta.tw.title)}`)
+  V('og:description e twitter:description batem com a description',
+    meta.og.description === meta.descricao && meta.tw.description === meta.descricao)
+  V('og:url e canonical no dominio proprio',
+    meta.og.url === 'https://seulegadoseguro.com.br/' && meta.canonical === 'https://seulegadoseguro.com.br/',
+    `og:url=${meta.og.url} canonical=${meta.canonical}`)
+  V('twitter:card e summary_large_image', meta.tw.card === 'summary_large_image', meta.tw.card)
+  V('og:type, og:locale e og:site_name coerentes',
+    meta.og.type === 'website' && meta.og.locale === 'pt_BR' && meta.og.site_name === 'Seu Legado Seguro',
+    `${meta.og.type} / ${meta.og.locale} / ${meta.og.site_name}`)
+
+  // ⚠️ A ASSERCAO QUE MAIS IMPORTA, e ela BUSCA a imagem pela URL ABSOLUTA —
+  // que e o que o robo do WhatsApp faz. Caminho relativo funciona no navegador
+  // (resolve contra a pagina) e falha no robo, que pede a imagem sozinha. Uma
+  // guarda que so lesse o atributo daria verde numa previa quebrada.
+  V('og:image e absoluta e igual a twitter:image',
+    /^https:\/\/seulegadoseguro\.com\.br\//.test(meta.og.image) && meta.tw.image === meta.og.image,
+    `${meta.og.image}`)
+
+  // ⚠️ E O ARQUIVO E BUSCADO NA ORIGEM SOB TESTE, nao na URL absoluta da tag.
+  // Sao duas propriedades e eu tinha juntado numa so: "o atributo e absoluto"
+  // (afirmado acima, no atributo) e "o arquivo existe e mede 1200x630". Buscar
+  // a URL absoluta faria o smoke LOCAL pedir a imagem a producao — e ele deu
+  // 404 na primeira vez justamente por isso, reprovando um build correto por
+  // um arquivo que ainda nao tinha subido. Em producao as duas coincidem.
+  // ⚠️ E O ARQUIVO E BUSCADO NA ORIGEM SOB TESTE, nao na URL absoluta da tag.
+  // Sao duas propriedades e eu tinha juntado numa so: "o atributo e absoluto"
+  // (afirmado acima, no atributo) e "o arquivo existe e mede 1200x630". Buscar
+  // a URL absoluta faria o smoke LOCAL pedir a imagem a producao — e ele deu
+  // 404 na primeira vez justamente por isso, reprovando um build correto por
+  // um arquivo que ainda nao tinha subido. Em producao as duas coincidem.
+  //
+  // ⚠️ E O exit 3 SAIU DAQUI, porque ele estava errado. A versao anterior
+  // saia 3 quando og:image nao era absoluta — tratando O DEFEITO AFIRMADO como
+  // "nao consegui medir". O impostor-ogimagem, que torna a URL relativa, saiu 3
+  // em vez de 1: a assercao ficou vermelha e o script morreu antes do placar.
+  // exit 3 e para instrumento quebrado, nunca para o alvo estar errado.
+  // O pathname resolve nos dois casos, entao as duas assercoes de arquivo
+  // rodam SEMPRE — e uma og:image relativa reprova em cima, onde e o lugar.
+  if (!meta.og.image) {
+    console.error('INSTRUMENTO: nao ha og:image nenhuma para resolver')
+    process.exit(3)
+  }
+  {
+    const naOrigem = new URL(new URL(meta.og.image, BASE).pathname, BASE).href
+    const img = await page.evaluate(async url => {
+      let status = 0
+      try { status = (await fetch(url, { cache: 'no-store' })).status } catch { status = 0 }
+      const d = await new Promise(res => {
+        const i = new Image()
+        i.onload = () => res({ w: i.naturalWidth, h: i.naturalHeight })
+        i.onerror = () => res({ w: 0, h: 0 })
+        i.src = url
+      })
+      return { status, ...d }
+    }, naOrigem)
+    V('og:image responde 200 e mede 1200x630',
+      img.status === 200 && img.w === 1200 && img.h === 630,
+      `${naOrigem} http=${img.status} ${img.w}x${img.h}`)
+    V('as dimensoes declaradas batem com o arquivo',
+      String(img.w) === meta.og['image:width'] && String(img.h) === meta.og['image:height'],
+      `arquivo ${img.w}x${img.h} vs declarado ${meta.og['image:width']}x${meta.og['image:height']}`)
+  }
+
   await ctx.close()
 }
 
