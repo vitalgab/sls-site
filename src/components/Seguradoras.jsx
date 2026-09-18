@@ -12,26 +12,26 @@
 // que já tem card próprio aqui, e o site da NotreDame hoje serve o logo da
 // Hapvida — o alt do cabeçalho de lá diz "Logo Hapvida SP/RJ".
 const parceiras = [
-  { nome: 'Porto Seguro', logo: 'seguradoras/porto-seguro.svg' },
-  { nome: 'SulAmérica', logo: 'seguradoras/sulamerica.svg' },
-  { nome: 'Bradesco Seguros', logo: 'seguradoras/bradesco.svg' },
-  { nome: 'Amil', logo: 'seguradoras/amil.svg' },
-  { nome: 'Unimed', logo: 'seguradoras/unimed.svg' },
-  { nome: 'Hapvida', logo: 'seguradoras/hapvida.svg' },
-  { nome: 'Azos', logo: 'seguradoras/azos.svg' },
-  { nome: 'MAG Seguros', logo: 'seguradoras/mag-seguros.svg' },
-  { nome: 'Icatu Seguros', logo: 'seguradoras/icatu.svg' },
-  { nome: 'Zurich', logo: 'seguradoras/zurich.svg' },
-  { nome: 'Tokio Marine', logo: 'seguradoras/tokio-marine.svg' },
-  { nome: 'Allianz', logo: 'seguradoras/allianz.svg' },
-  { nome: 'Seguros Unimed', logo: 'seguradoras/seguros-unimed.png' },
-  { nome: 'Mapfre', logo: 'seguradoras/mapfre.svg' },
-  { nome: 'Qualicorp', logo: 'seguradoras/qualicorp.png' },
-  { nome: 'Fairfax', logo: 'seguradoras/fairfax.svg' },
-  { nome: 'Coris Seguro Viagem', logo: 'seguradoras/coris.svg' },
-  { nome: 'Ademicon', logo: 'seguradoras/ademicon.svg' },
-  { nome: 'Akad Seguros', logo: 'seguradoras/akad.svg' },
-  { nome: 'Omint', logo: 'seguradoras/omint.png' },
+  { nome: 'Porto Seguro', logo: 'seguradoras/porto-seguro.svg', w: 138, h: 32 },
+  { nome: 'SulAmérica', logo: 'seguradoras/sulamerica.svg', w: 500, h: 128 },
+  { nome: 'Bradesco Seguros', logo: 'seguradoras/bradesco.svg', w: 500, h: 80 },
+  { nome: 'Amil', logo: 'seguradoras/amil.svg', w: 4094, h: 1458 },
+  { nome: 'Unimed', logo: 'seguradoras/unimed.svg', w: 500, h: 167 },
+  { nome: 'Hapvida', logo: 'seguradoras/hapvida.svg', w: 500, h: 111 },
+  { nome: 'Azos', logo: 'seguradoras/azos.svg', w: 100, h: 20 },
+  { nome: 'MAG Seguros', logo: 'seguradoras/mag-seguros.svg', w: 600, h: 289 },
+  { nome: 'Icatu Seguros', logo: 'seguradoras/icatu.svg', w: 1412, h: 264 },
+  { nome: 'Zurich', logo: 'seguradoras/zurich.svg', w: 604, h: 379 },
+  { nome: 'Tokio Marine', logo: 'seguradoras/tokio-marine.svg', w: 1675, h: 414 },
+  { nome: 'Allianz', logo: 'seguradoras/allianz.svg', w: 300, h: 134 },
+  { nome: 'Seguros Unimed', logo: 'seguradoras/seguros-unimed.png', w: 210, h: 87 },
+  { nome: 'Mapfre', logo: 'seguradoras/mapfre.svg', w: 1708, h: 470 },
+  { nome: 'Qualicorp', logo: 'seguradoras/qualicorp.png', w: 263, h: 96 },
+  { nome: 'Fairfax', logo: 'seguradoras/fairfax.svg', w: 175, h: 55 },
+  { nome: 'Coris Seguro Viagem', logo: 'seguradoras/coris.svg', w: 172, h: 35 },
+  { nome: 'Ademicon', logo: 'seguradoras/ademicon.svg', w: 850, h: 185 },
+  { nome: 'Akad Seguros', logo: 'seguradoras/akad.svg', w: 181, h: 76 },
+  { nome: 'Omint', logo: 'seguradoras/omint.png', w: 900, h: 246 },
 ]
 
 function CartaoSeguradora({ p }) {
@@ -58,9 +58,14 @@ function CartaoSeguradora({ p }) {
         width: '100%', height: 48,
       }}>
         {p.logo ? (
+          /* width/height intrinsecos, pela PROPORCAO: sem eles o navegador nao
+             reserva espaco e a grade pula quando os 20 logos chegam. Nao mudam
+             o desenho — o CSS abaixo manda width/height auto com teto, e style
+             inline vence atributo. */
           <img
             src={`${import.meta.env.BASE_URL}${p.logo}`}
             alt={p.nome}
+            width={p.w} height={p.h}
             loading="lazy"
             /* teto de altura E de largura: só altura faria um logo 4:1 como o da
                Porto esmagar os quadrados ao lado. Com os dois, o largo trava na

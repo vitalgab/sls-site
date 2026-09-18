@@ -11,6 +11,7 @@ export default function Footer() {
             <img
               src={`${import.meta.env.BASE_URL}assets/logo-white-transparent.png`}
               alt="Seu Legado Seguro"
+              width="3125" height="1875"
               style={{ height: 90, width: 'auto', marginBottom: 22 }}
             />
             <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.85, maxWidth: 300, marginBottom: 24 }}>
@@ -50,12 +51,12 @@ export default function Footer() {
 
           {/* Produtos */}
           <div>
-            <h4 style={{
+            <h3 style={{
               color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
               fontSize: 'var(--fs-eyebrow)', marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
             }}>
               Produtos
-            </h4>
+            </h3>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {['Plano de Saúde', 'Seguro de Vida', 'Previdência Privada', 'RC Profissional', 'Demais Ramos'].map(item => (
                 <li key={item}>
@@ -70,12 +71,12 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 style={{
+            <h3 style={{
               color: 'var(--white)', fontFamily: 'var(--font-body)', fontWeight: 700,
               fontSize: 'var(--fs-eyebrow)', marginBottom: 22, letterSpacing: 2.5, textTransform: 'uppercase',
             }}>
               Links
-            </h4>
+            </h3>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 { label: 'Para quem é', href: '#para-quem' },

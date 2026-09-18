@@ -348,7 +348,12 @@ async function aplicarRotas (page) {
         // linha "cheia" por construcao. Quem pega o caso e o celular, que sao
         // sempre 2 colunas, e a assercao de paridade. Sem ela, um N impar
         // passaria em metade das larguras medidas.
-        t = mutar(t, ',{nome:`Ademicon`,logo:`seguradoras/ademicon.svg`}', '', 'uma parceira da lista')
+        // ⚠️ A ancora ja quebrou uma vez, com exit 3: as entradas ganharam w e h
+        // quando as imagens passaram a declarar dimensao, e o literal parou de
+        // existir. Agora ela vai por REGEX ate a chave de fechamento, que
+        // sobrevive a campo novo na lista.
+        t = mutarRe(t, /,\{nome:`Ademicon`,logo:`seguradoras\/ademicon\.svg`[^}]*\}/,
+          '', 'uma parceira da lista')
       } else if (MODO === 'impostor-cabecalho') {
         // Largura fixa em cima de altura fixa: a marca estica. "Sem deformar" e
         // uma afirmacao sobre a PROPORCAO, e e so ela que este impostor quebra.
@@ -707,13 +712,32 @@ async function medirLogoCabecalho (page) {
     `Montserrat=${sonda.mont.toFixed(1)}px fallback=${sonda.fake.toFixed(1)}px`)
 
   // ---- 2. titulos, citacao e bloco da missao ----
-  // Tipografia de DISPLAY. Os <h4> do rodape ficam de fora de proposito: sao
-  // rotulos de coluna em var(--font-body) (Inter), como no que esta no ar.
-  const tit = await page.evaluate(() => [...document.querySelectorAll('h1, h2, h3, blockquote, .faixa-parallax p, #sobre h4')].map(el => {
-    const cs = getComputedStyle(el)
-    return { tag: el.tagName.toLowerCase(), txt: (el.textContent || '').trim().slice(0, 34), ff: cs.fontFamily, fs: cs.fontStyle, fw: cs.fontWeight,
-      faixa: !!el.closest('.faixa-parallax') }
-  }))
+  // Tipografia de DISPLAY. Os rotulos de coluna do RODAPE ficam de fora de
+  // proposito: sao rotulos em var(--font-body) (Inter), como no que esta no ar.
+  //
+  // ⚠️ A EXCLUSAO E POR ONDE O ELEMENTO ESTA, NAO PELA TAG, e a diferenca me
+  // mordeu. Antes o seletor era 'h1, h2, h3, ..., #sobre h4', e os rotulos do
+  // rodape escapavam por serem <h4> — por acidente da tag, nao por intencao
+  // escrita. Quando o conserto de hierarquia os promoveu a <h3>, eles cairam
+  // dentro do escopo e a assercao reprovou um conserto correto. Exclusao que
+  // depende do nome da tag e exclusao que muda de significado quando a tag
+  // muda; 'closest(footer)' diz o que eu quero dizer.
+  const tit = await page.evaluate(() => [...document.querySelectorAll('h1, h2, h3, blockquote, .faixa-parallax p')]
+    .filter(el => !el.closest('footer'))
+    .map(el => {
+      const cs = getComputedStyle(el)
+      return { tag: el.tagName.toLowerCase(), txt: (el.textContent || '').trim().slice(0, 34), ff: cs.fontFamily, fs: cs.fontStyle, fw: cs.fontWeight,
+        faixa: !!el.closest('.faixa-parallax') }
+    }))
+
+  // E O QUE FOI EXCLUIDO GANHA A SUA PROPRIA AFIRMACAO. Tirar elementos de uma
+  // varredura sem dizer nada sobre eles cria ponto cego: os rotulos do rodape
+  // poderiam virar Montserrat amanha e nenhuma linha ficaria vermelha.
+  const rodape = await page.evaluate(() => [...document.querySelectorAll('footer h1, footer h2, footer h3, footer h4')]
+    .map(el => ({ txt: el.textContent.trim().slice(0, 20), ff: getComputedStyle(el).fontFamily })))
+  V('rotulos do rodape em Inter, nao em Montserrat',
+    rodape.length === 2 && rodape.every(r => /^["']?Inter/i.test(r.ff.trim())),
+    `${rodape.length} rotulo(s): ${rodape.map(r => r.txt + '=' + r.ff.split(',')[0]).join(', ')}`)
   V('titulos/citacao/missao presentes no DOM', tit.length >= 20, `${tit.length} elementos`)
   const foraFam = tit.filter(t => !/^["']?Montserrat/i.test(t.ff.trim()))
   V('fontFamily comeca com Montserrat', foraFam.length === 0, foraFam.length ? JSON.stringify(foraFam.slice(0, 2)) : `${tit.length}/${tit.length}`)
@@ -1697,6 +1721,7 @@ async function medirLogoCabecalho (page) {
   V('JSON-LD ainda cita a cidade', meta.ldCidade === 'Salvador', `addressLocality=${meta.ldCidade}`)
   V('JSON-LD com nome e url coerentes', meta.ldNome === 'Seu Legado Seguro' && meta.ldUrl === 'https://seulegadoseguro.com.br/',
     `name=${meta.ldNome} url=${meta.ldUrl}`)
+
   // ---- dados estruturados ----
   // ⚠️ O PARSE E AFIRMADO SEPARADO, e e a assercao mais importante das quatro:
   // JSON-LD quebrado o Google descarta INTEIRO e em silencio. Ler `ld` sem
@@ -1800,6 +1825,61 @@ async function medirLogoCabecalho (page) {
       String(img.w) === meta.og['image:width'] && String(img.h) === meta.og['image:height'],
       `arquivo ${img.w}x${img.h} vs declarado ${meta.og['image:width']}x${meta.og['image:height']}`)
   }
+
+  await ctx.close()
+}
+
+// ---------------- SEO ON-PAGE: CABECALHOS, alt, DIMENSOES ----------------
+// Quatro coisas que o robo e o leitor de tela leem, e que ninguem ve quebrar.
+{
+  const { ctx, page } = await abrir(1440, 900)
+  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 })
+  await page.evaluate(() => document.fonts.ready)
+  await varrerPagina(page)
+
+  const seo = await page.evaluate(() => ({
+    lang: document.documentElement.getAttribute('lang'),
+    niveis: [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].map(h => +h.tagName[1]),
+    h1s: [...document.querySelectorAll('h1')].map(h => h.textContent.trim().slice(0, 40)),
+    imgs: [...document.querySelectorAll('img')].map(i => ({
+      src: (i.getAttribute('src') || '').split('/').pop(),
+      alt: i.getAttribute('alt'),
+      w: i.getAttribute('width'), h: i.getAttribute('height')
+    })),
+    semNome: [...document.querySelectorAll('select, input:not([type=hidden]), textarea')]
+      .filter(e => !e.getAttribute('aria-label') && !e.labels?.length &&
+                   !e.getAttribute('placeholder') && !e.getAttribute('title'))
+      .map(e => e.tagName.toLowerCase())
+  }))
+
+  V('<html lang="pt-BR">', seo.lang === 'pt-BR', `lang=${seo.lang}`)
+  // ⚠️ UM h1, e o carrossel do hero e o suspeito obvio: se cada slide trouxesse
+  // o seu, seriam tres — e o robo nao saberia qual e o titulo da pagina.
+  V('um unico <h1> na pagina', seo.h1s.length === 1, `${seo.h1s.length}: ${JSON.stringify(seo.h1s)}`)
+  // Hierarquia sem PULO: h1 -> h3 e o defeito, e ele nao aparece na tela porque
+  // o tamanho vem do style inline, nao da tag.
+  const pulos = []
+  for (let i = 1; i < seo.niveis.length; i++) {
+    if (seo.niveis[i] > seo.niveis[i - 1] + 1) pulos.push(`h${seo.niveis[i - 1]}->h${seo.niveis[i]} na posicao ${i}`)
+  }
+  V('cabecalhos sem pular nivel', pulos.length === 0,
+    pulos.length ? pulos.join(' | ') : seo.niveis.join(''))
+
+  // alt em TODAS, e alt que nao seja a palavra "imagem"/"foto" sozinha
+  const semAlt = seo.imgs.filter(i => !i.alt || !i.alt.trim())
+  const altPreguicoso = seo.imgs.filter(i => /^\s*(imagem|foto|logo|image|picture)\s*$/i.test(i.alt || ''))
+  V('toda imagem tem alt', semAlt.length === 0 && seo.imgs.length > 20,
+    `${seo.imgs.length} imagens, ${semAlt.length} sem alt` + (semAlt.length ? `: ${semAlt.map(i => i.src).join(', ')}` : ''))
+  V('nenhum alt gerico', altPreguicoso.length === 0,
+    altPreguicoso.length ? altPreguicoso.map(i => `${i.src}="${i.alt}"`).join(', ') : 'nenhum')
+
+  // width/height em TODAS: e o que evita o salto de layout quando a imagem chega
+  const semDim = seo.imgs.filter(i => !i.w || !i.h)
+  V('toda imagem declara width e height', semDim.length === 0,
+    `${seo.imgs.length} imagens, ${semDim.length} sem dimensao` + (semDim.length ? `: ${semDim.map(i => i.src).join(', ')}` : ''))
+
+  V('todo campo tem nome acessivel', seo.semNome.length === 0,
+    seo.semNome.length ? seo.semNome.join(', ') : `${seo.imgs.length > 0 ? 'ok' : '?'}`)
 
   await ctx.close()
 }

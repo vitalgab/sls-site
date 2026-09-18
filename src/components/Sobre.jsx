@@ -154,11 +154,16 @@ export default function Sobre() {
                 }}>
                   {d.icon}
                 </div>
-                <h4 style={{
+                {/* h3, nao h4: dentro de #sobre o h2 e o titulo da secao, e um h4
+                    aqui PULA o h3. ⚠️ O letterSpacing 'normal' e explicito e
+                    necessario: nesta folha h1/h2/h3 levam -0.015em e h4 nao, entao
+                    a troca de tag apertaria o tracking. Com ele, a semantica muda
+                    e o desenho fica idêntico ao pixel. */}
+                <h3 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: 'var(--fs-h4)', fontWeight: 600, color: 'var(--navy)',
-                  marginBottom: 10, lineHeight: 1.3,
-                }}>{d.title}</h4>
+                  marginBottom: 10, lineHeight: 1.3, letterSpacing: 'normal',
+                }}>{d.title}</h3>
                 <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--gray-600)', lineHeight: 1.7 }}>{d.desc}</p>
               </div>
             ))}

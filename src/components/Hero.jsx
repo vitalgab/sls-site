@@ -42,13 +42,17 @@ function FormularioCotacao() {
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ marginBottom: 8 }}>
-        <h3 style={{
+        {/* h2, nao h3: depois do h1 do hero, um h3 PULA um nivel, e leitor de
+            tela anuncia a hierarquia. h2 e h3 dividem a mesma regra de peso e
+            tracking nesta folha, e o tamanho vem inline — a troca nao move um
+            pixel. */}
+        <h2 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'var(--fs-h3-form)', fontWeight: 400, color: 'var(--navy)',
           lineHeight: 1.2, marginBottom: 6,
         }}>
           Solicite uma cotação grátis
-        </h3>
+        </h2>
         <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--gray-600)', lineHeight: 1.5 }}>
           Resposta em até 24h · Sem compromisso
         </p>
@@ -74,7 +78,12 @@ function FormularioCotacao() {
         onFocus={e => e.target.style.borderColor = 'var(--navy)'}
         onBlur={e => e.target.style.borderColor = '#CDD9EA'}
       />
+      {/* aria-label porque este select nao tem <label> visivel: o rotulo e a
+          primeira <option>, que o leitor de tela NAO anuncia como nome do
+          campo. Sem isso ele le "caixa de combinacao" e nada mais — e o
+          Lighthouse reprova em select-name. Nao muda um pixel. */}
       <select
+        aria-label="Tenho interesse em"
         value={form.interesse}
         onChange={e => setForm(prev => ({ ...prev, interesse: e.target.value }))}
         style={{
