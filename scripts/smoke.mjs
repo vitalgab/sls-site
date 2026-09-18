@@ -38,6 +38,7 @@ const MODOS = ['real', 'impostor-css', 'impostor-rede', 'impostor-wa', 'impostor
   'impostor-cidade-ld', 'impostor-ldurl',
   'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical',
   'impostor-robots', 'impostor-sitemap', 'impostor-lastmod',
+  'impostor-ldquebrado', 'impostor-ldtipo',
   // NAO e impostor: e teste de robustez. A fonte do runner do CI renderiza ~2px
   // mais larga que a daqui, e foi por 2px que o deploy do triangulo caiu. Este
   // modo alarga o tracking de proposito e exige que TUDO continue verde.
@@ -156,7 +157,8 @@ async function aplicarRotas (page) {
   // e o JSON-LD tem de MANTE-LA. Um impostor so, mexendo em tudo, morderia e nao
   // diria qual das cinco linhas soube reprovar. Um por campo diz.
   if (['impostor-titulo', 'impostor-cidade', 'impostor-cidade-ld', 'impostor-ldurl',
-    'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical'].includes(MODO)) {
+    'impostor-ogtitulo', 'impostor-ogimagem', 'impostor-canonical',
+    'impostor-ldquebrado', 'impostor-ldtipo'].includes(MODO)) {
     await page.route(u => u.href === BASE || u.href === BASE + 'index.html', async r => {
       let t = await (await r.fetch()).text()
       if (MODO === 'impostor-titulo') {
@@ -181,10 +183,18 @@ async function aplicarRotas (page) {
         // imagem sozinha. A previa sai sem cartao e nada no site parece errado.
         t = mutar(t, 'content="https://seulegadoseguro.com.br/assets/og-image.png"',
           'content="/assets/og-image.png"', 'og:image e twitter:image absolutas')
+      } else if (MODO === 'impostor-ldquebrado') {
+        // Tira uma virgula do JSON. O bloco continua LA, com todo o texto
+        // dentro — quem le por regex ou por includes nao ve diferenca. Quem
+        // parseia, ve. O Google parseia.
+        t = mutar(t, '"name": "Seu Legado Seguro",\n      "description"',
+          '"name": "Seu Legado Seguro"\n      "description"', 'virgula do JSON-LD')
+      } else if (MODO === 'impostor-ldtipo') {
+        t = mutar(t, '"@type": "InsuranceAgency"', '"@type": "Restaurant"', 'tipo do JSON-LD')
       } else if (MODO === 'impostor-canonical') {
         t = mutar(t, '<link rel="canonical" href="https://seulegadoseguro.com.br/" />', '', 'link canonical')
       } else {
-        t = mutar(t, '"url": "https://seulegadoseguro.com.br"',
+        t = mutar(t, '"url": "https://seulegadoseguro.com.br/"',
           '"url": "https://vitalgab.github.io/sls-site/"', 'url do JSON-LD')
       }
       await r.fulfill({ body: t, contentType: 'text/html' })
@@ -1669,6 +1679,8 @@ async function medirLogoCabecalho (page) {
       ldNome: ld?.name || null,
       ldCidade: ld?.address?.addressLocality || null,
       ldUrl: ld?.url || null,
+      ld,
+      ldCru: document.querySelector('script[type="application/ld+json"]')?.textContent || '',
       canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') || null,
       og: Object.fromEntries(['type', 'site_name', 'locale', 'url', 'title', 'description',
         'image', 'image:width', 'image:height', 'image:alt']
@@ -1683,8 +1695,35 @@ async function medirLogoCabecalho (page) {
   V('description ainda cita a cidade', /salvador/i.test(meta.descricao),
     meta.descricao.slice(0, 72) + '...')
   V('JSON-LD ainda cita a cidade', meta.ldCidade === 'Salvador', `addressLocality=${meta.ldCidade}`)
-  V('JSON-LD com nome e url coerentes', meta.ldNome === 'Seu Legado Seguro' && meta.ldUrl === 'https://seulegadoseguro.com.br',
+  V('JSON-LD com nome e url coerentes', meta.ldNome === 'Seu Legado Seguro' && meta.ldUrl === 'https://seulegadoseguro.com.br/',
     `name=${meta.ldNome} url=${meta.ldUrl}`)
+  // ---- dados estruturados ----
+  // ⚠️ O PARSE E AFIRMADO SEPARADO, e e a assercao mais importante das quatro:
+  // JSON-LD quebrado o Google descarta INTEIRO e em silencio. Ler `ld` sem
+  // afirmar que ele parseou faria todas as linhas abaixo virarem `undefined`
+  // comparado com `undefined` — verdes sobre nada.
+  let ldOk = false
+  try { ldOk = !!JSON.parse(meta.ldCru) } catch { ldOk = false }
+  V('JSON-LD parseia', ldOk && !!meta.ld, `${meta.ldCru.length} bytes`)
+  V('JSON-LD e InsuranceAgency', meta.ld?.['@type'] === 'InsuranceAgency', `@type=${meta.ld?.['@type']}`)
+  V('JSON-LD com telefone e endereco certos',
+    meta.ld?.telephone === `+${WA}` && meta.ld?.address?.addressRegion === 'BA' &&
+    meta.ld?.address?.addressCountry === 'BR',
+    `tel=${meta.ld?.telephone} ${meta.ld?.address?.addressLocality}/${meta.ld?.address?.addressRegion}/${meta.ld?.address?.addressCountry}`)
+  V('JSON-LD atende o Brasil e nomeia o fundador',
+    meta.ld?.areaServed?.name === 'Brasil' && meta.ld?.founder?.name === 'Gabriel Vital',
+    `areaServed=${meta.ld?.areaServed?.name} founder=${meta.ld?.founder?.name}`)
+  // logo e image tem de EXISTIR no servidor, nao so estar escritos
+  for (const campo of ['logo', 'image']) {
+    const u = meta.ld?.[campo]
+    if (!u) { V(`JSON-LD ${campo} declarado`, false, 'ausente'); continue }
+    const naOrigem = new URL(new URL(u, BASE).pathname, BASE).href
+    const st = await page.evaluate(async url => {
+      try { return (await fetch(url, { cache: 'no-store' })).status } catch { return 0 }
+    }, naOrigem)
+    V(`JSON-LD ${campo} e absoluto e responde 200`,
+      /^https:\/\/seulegadoseguro\.com\.br\//.test(u) && st === 200, `${u} http=${st}`)
+  }
 
   // ---- o cartao do link ----
   // As 12 tags que o briefing pede, conferidas UMA A UMA pelo nome: contar

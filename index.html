@@ -35,20 +35,47 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&display=swap" rel="stylesheet" />
+    <!-- Dados estruturados. Tipo InsuranceAgency, que existe no vocabulário e
+         herda de FinancialService -> LocalBusiness -> Organization -> Thing:
+         conferido contra schemaorg-current-https.jsonld, e é de lá que sai a
+         garantia de que cada campo abaixo cabe neste tipo — não da memória.
+
+         ⚠️ DUAS AUSÊNCIAS DE PROPÓSITO, e as duas são o mesmo princípio:
+         campo vazio é melhor que campo inventado.
+
+         - sameAs: o site não traz nenhum link de rede social. Não há o que
+           declarar, e apontar para um perfil que eu não vi seria afirmar
+           identidade alheia.
+         - priceRange: o campo é válido em LocalBusiness e o Google até o
+           recomenda — mas o VALOR seria invenção minha. Quem paga o prêmio é o
+           cliente, a faixa varia por produto e por perfil, e a corretora é
+           remunerada pela seguradora. Escrever "$$" seria uma afirmação sobre o
+           negócio do Gabriel que eu não tenho de onde tirar. Basta ele dizer a
+           faixa e o campo entra. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "InsuranceAgency",
       "name": "Seu Legado Seguro",
-      "description": "Corretora de seguros em Salvador especializada em Saúde, Vida, Previdência e Responsabilidade Civil para médicos e profissionais liberais.",
+      "description": "Seu Legado Seguro — Corretora de seguros em Salvador especializada em Saúde, Vida, Previdência e Responsabilidade Civil para médicos e profissionais liberais.",
+      "url": "https://seulegadoseguro.com.br/",
+      "logo": "https://seulegadoseguro.com.br/assets/logo-color-transparent.png",
+      "image": "https://seulegadoseguro.com.br/assets/og-image.png",
+      "telephone": "+5571981018556",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Salvador",
         "addressRegion": "BA",
         "addressCountry": "BR"
       },
-      "telephone": "+5571981018556",
-      "url": "https://seulegadoseguro.com.br"
+      "areaServed": {
+        "@type": "Country",
+        "name": "Brasil"
+      },
+      "founder": {
+        "@type": "Person",
+        "name": "Gabriel Vital"
+      }
     }
     </script>
   </head>
