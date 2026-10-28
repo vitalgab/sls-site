@@ -321,7 +321,7 @@ export default function Sobre() {
           />
           <div className="citacao-texto-col">
             <blockquote className="citacao-texto">
-              {'"Meu papel é estar lá antes de você precisar."'}
+              {'"Meu papel é chegar antes de você precisar."'}
             </blockquote>
             <footer className="citacao-assinatura">— Gabriel Vital</footer>
           </div>

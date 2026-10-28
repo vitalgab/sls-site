@@ -892,7 +892,7 @@ async function medirLogoCabecalho (page) {
   })
   if (!cit) { console.error('INSTRUMENTO: .faixa-citacao nao existe'); process.exit(3) }
   if (cit.incompleta) { console.error(`INSTRUMENTO: faixa da citacao incompleta: ${JSON.stringify(cit)}`); process.exit(3) }
-  V('citacao do Gabriel na faixa', cit.texto === '"Meu papel é estar lá antes de você precisar."' && cit.assinatura === '— Gabriel Vital',
+  V('citacao do Gabriel na faixa', cit.texto === '"Meu papel é chegar antes de você precisar."' && cit.assinatura === '— Gabriel Vital',
     `${JSON.stringify(cit.texto)} / ${JSON.stringify(cit.assinatura)}`)
   V('faixa da citacao e navy e ocupa a largura da tela', cit.fundo === 'rgb(0, 58, 112)' && cit.largura === cit.janela,
     `${cit.fundo}, ${cit.largura}px de ${cit.janela}px`)
