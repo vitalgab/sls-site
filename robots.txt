@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://seulegadoseguro.com.br/sitemap.xml

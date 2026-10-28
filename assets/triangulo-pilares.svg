@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9.6000 7.5282" role="img" aria-label="Pilares Seu Legado Seguro: Confiança, Longo Prazo e Foco no Cliente">
+<defs>
+<linearGradient id="sls-navy" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#003A70"/><stop offset="100%" stop-color="#001C3D"/></linearGradient>
+<linearGradient id="sls-gold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#C9A84C"/><stop offset="100%" stop-color="#A6872F"/></linearGradient>
+<linearGradient id="sls-steel" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4B6A8A"/><stop offset="100%" stop-color="#2E4A68"/></linearGradient>
+</defs>
+<path d="M6.8000,6.3622 L0.8000,6.3622 L4.3000,0.3000 L5.3000,0.3000 L2.3000,5.4962 L6.3000,5.4962 Z" fill="url(#sls-steel)" stroke="#ffffff" stroke-width="0.09" stroke-linejoin="miter"/>
+<path d="M0.8000,6.3622 L6.8000,6.3622 L4.8000,2.8981 L5.3000,2.0321 L8.3000,7.2282 L1.3000,7.2282 Z" fill="url(#sls-gold)" stroke="#ffffff" stroke-width="0.09" stroke-linejoin="miter"/>
+<path d="M2.3000,5.4962 L5.3000,0.3000 L8.8000,6.3622 L8.3000,7.2282 L5.3000,2.0321 L3.3000,5.4962 Z" fill="url(#sls-navy)" stroke="#ffffff" stroke-width="0.09" stroke-linejoin="miter"/>
+</svg>
