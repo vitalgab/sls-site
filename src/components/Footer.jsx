@@ -100,7 +100,7 @@ export default function Footer() {
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
         }}>
-          <p style={{ fontSize: 'var(--fs-xs)' }}>© 2025 Seu Legado Seguro · Todos os direitos reservados.</p>
+          <p style={{ fontSize: 'var(--fs-xs)' }}>© 2026 Seu Legado Seguro · Todos os direitos reservados.</p>
           <p style={{ fontSize: 'var(--fs-xs)' }}>Corretor SUSEP nº {SUSEP}</p>
         </div>
       </div>

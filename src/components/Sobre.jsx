@@ -29,7 +29,7 @@ const diferenciais = [
       </svg>
     ),
     title: 'Acompanhamento de ponta a ponta',
-    desc: 'Nosso trabalho não termina na assinatura. Acompanhamos renovações, adequamos coberturas quando sua vida muda e avisamos antes de qualquer vencimento.',
+    desc: 'Nosso trabalho não termina na assinatura. Acompanhamos renovações, adequamos coberturas quando sua vida muda e avisamos com antecedência.',
   },
   {
     icon: (
