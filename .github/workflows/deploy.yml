@@ -68,7 +68,49 @@ jobs:
         # arquivo do repositório não funciona: a rasterização de fonte do runner
         # difere da caixa onde a referência foi gravada, e 693 de 2576 blocos
         # "mudaram" numa alteração que não tocou uma linha do desktop.
+        #
+        # O TRAILER "Desktop-muda: sim" NA MENSAGEM DO HEAD é a saída que o
+        # próprio smoke.mjs documenta: quando o desktop muda DE PROPÓSITO a
+        # guarda fica vermelha, e é para ficar — o jeito de passar é
+        # ANTERIOR=nenhum naquela rodada, dito no commit. Aqui ele só LEVANTA A
+        # BANDEIRA; quem aplica o ANTERIOR=nenhum é o passo Smoke. Sem o
+        # trailer, nada muda.
+        #
+        # grep -qxF, e não busca de substring: -x exige a LINHA INTEIRA igual,
+        # -F trata o texto como literal. É o que separa declarar de mencionar.
+        # A primeira versão casava [desktop-muda] em qualquer lugar da
+        # mensagem, e aí o commit que só FALAVA do marcador — este mesmo, que o
+        # descreve — desligava a guarda se fosse o HEAD. Faca sem cabo.
+        #
+        # Não uso o parser de trailer do git (%(trailers:key=...)) de
+        # propósito: ele só reconhece trailer no ÚLTIMO parágrafo da mensagem.
+        # Um Desktop-muda: sim seguido de qualquer parágrafo de prosa sairia
+        # vazio, a guarda compararia pixels e o deploy morreria sem que a
+        # mensagem explicasse por quê. Falha silenciosa por posição de linha é
+        # pior do que a regra mais burra que se lê em voz alta.
+        #
+        # A referência continua sendo construída mesmo com o trailer, e isso
+        # não é desperdício: impostor-desktop é pego SÓ pela guarda de pixel.
+        # Entregar 'nenhum' a ele o faz passar VERDE, e aí o passo dos
+        # impostores aborta o deploy dizendo "o smoke não discrimina" —
+        # vermelho verdadeiro pelo motivo errado, exatamente o que o cabeçalho
+        # da guarda manda evitar. Medido nesta caixa: impostor-desktop sai 0
+        # com ANTERIOR=nenhum e 1 com a referência. O impostor-desktop-cor sai
+        # 1 nos dois casos, porque a cor que ele muta também derruba asserções
+        # de contraste — mas um impostor cego já basta para parar o deploy.
+        # Por isso o trailer desliga a guarda só no Smoke real, e os
+        # impostores seguem recebendo a referência de verdade.
+        #
+        # A mensagem é lida com git log, NÃO interpolada de
+        # github.event.head_commit.message: texto que qualquer commit escreve,
+        # expandido dentro de run:, é injeção de shell.
         run: |
+          if git log -1 --format=%B HEAD | grep -qxF 'Desktop-muda: sim'; then
+            echo "HEAD declara 'Desktop-muda: sim': a guarda de pixel sai desta rodada"
+            echo "pixel_off=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "pixel_off=nao" >> "$GITHUB_OUTPUT"
+          fi
           ANTERIOR="${{ github.event.before }}"
           if [ -z "$ANTERIOR" ] || [ "$ANTERIOR" = "0000000000000000000000000000000000000000" ] \
              || ! git rev-parse --verify --quiet "$ANTERIOR^{commit}" > /dev/null; then
@@ -114,8 +156,22 @@ jobs:
       # arquivos, não o conteúdo, então nenhum pixel pode mudar. ANTERIOR sai do
       # passo que construiu o commit de trás, porque a base DELE é outra e só o
       # script sabe qual.
+      #
+      # Com "Desktop-muda: sim" no HEAD, esta rodada roda com ANTERIOR=nenhum,
+      # e o smoke IMPRIME que pulou a guarda. Guarda que se cala ao ser pulada é
+      # guarda que ninguém percebe que parou. Os impostores, logo abaixo,
+      # continuam recebendo a referência de verdade.
       - name: Smoke
-        run: ANTERIOR='${{ steps.anterior.outputs.url }}' node scripts/smoke.mjs
+        env:
+          REFERENCIA: ${{ steps.anterior.outputs.url }}
+          PIXEL_OFF: ${{ steps.anterior.outputs.pixel_off }}
+        run: |
+          if [ "$PIXEL_OFF" = 'sim' ]; then
+            echo "'Desktop-muda: sim' declarado no HEAD: ANTERIOR=nenhum nesta rodada"
+            ANTERIOR=nenhum node scripts/smoke.mjs
+          else
+            ANTERIOR="$REFERENCIA" node scripts/smoke.mjs
+          fi
 
       # Os impostores custam ~11 min dos ~17 do deploy, e só dizem algo quando a
       # SUÍTE muda: eles medem se o smoke sabe reprovar, não se o site está bom.
